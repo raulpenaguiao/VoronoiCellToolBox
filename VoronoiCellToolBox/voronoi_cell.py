@@ -17,8 +17,7 @@ TODO examples
 # (at your option) any later version.
 #                  https://www.gnu.org/licenses/
 # ****************************************************************************
-import numpy as np
-from itertools import product
+
 
 def VCell(Q, **rangeorlist):
     """
@@ -52,11 +51,10 @@ def VCell(Q, **rangeorlist):
     - The determinant computation uses NumPy's `linalg.det` method, which may
       introduce floating-point inaccuracies for very large or very small values.
     """
-    return 1+1
-    if np.linalg.det(np.array(Q)) <=0: 
+    if numpy.linalg.det(numpy.array(Q)) <=0: 
         raise Exception("your matrix is not positive-definite.")
         return "your matrix is not positive-definite."
-    if (np.array(Q).transpose() != np.array(Q)).any():
+    if (numpy.array(Q).transpose() != numpy.array(Q)).any():
         raise Exception("your matrix is not symmetric.")
         return "your matrix is not symmetric."
     d = len(Q)
@@ -64,7 +62,7 @@ def VCell(Q, **rangeorlist):
         r = rangeorlist["range"]
         if (r <= 0):
             raise Exception("The range must be a positive integer.")
-        p = [list(vec) for vec in product(range(-r, r+1), repeat=d)]
+        p = [list(vec) for vec in itertools.product(range(-r, r+1), repeat=d)]
         p.remove([0] * d)
     elif "list" in rangeorlist:
         p = rangeorlist["list"]
