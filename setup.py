@@ -16,6 +16,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="",
     packages=setuptools.find_packages(),
-    include_dirs=[np.get_include()] + [itertools.get_include()],
+    include_dirs=[np.get_include()],
     zip_safe=False,
 )
