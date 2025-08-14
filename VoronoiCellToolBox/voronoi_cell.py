@@ -52,6 +52,7 @@ def VCell(Q, **rangeorlist):
     - The determinant computation uses NumPy's `linalg.det` method, which may
       introduce floating-point inaccuracies for very large or very small values.
     """
+    return 1+1
     if np.linalg.det(np.array(Q)) <=0: 
         raise Exception("your matrix is not positive-definite.")
         return "your matrix is not positive-definite."
