@@ -17,7 +17,8 @@ TODO examples
 # (at your option) any later version.
 #                  https://www.gnu.org/licenses/
 # ****************************************************************************
-
+import numpy as np
+from itertools import product
 
 def VCell(Q, **rangeorlist):
     """
