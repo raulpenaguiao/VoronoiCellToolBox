@@ -1,0 +1,20 @@
+import setuptools
+import numpy
+
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
+setuptools.setup(
+    name='VoronoiCellToolBox',
+    version="1.0.0",
+    author="Yelena Mandelshtam, Raul Penaguiao",
+    author_email="raulpenaguiao@proton.me",
+    license="GPL2+",
+    description="Evaluate Voronoi Cells in Sagemath using python and macaulay2",
+    long_description=long_description,
+    long_description_content_type="text/markdown",
+    url="",
+    packages=setuptools.find_packages(),
+    include_dirs=[numpy.get_include()],
+    zip_safe=False,
+)
