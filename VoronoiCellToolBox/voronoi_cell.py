@@ -18,6 +18,9 @@ TODO examples
 #                  https://www.gnu.org/licenses/
 # ****************************************************************************
 
+import numpy
+import itertools
+
 
 def VCell(Q, **rangeorlist):
     """
