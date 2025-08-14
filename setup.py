@@ -1,6 +1,6 @@
 import setuptools
 import numpy as np
-from itertools import product
+import itertools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -16,6 +16,6 @@ setuptools.setup(
     long_description_content_type="text/markdown",
     url="",
     packages=setuptools.find_packages(),
-    include_dirs=[np.get_include()] + [product.get_include()],
+    include_dirs=[np.get_include()] + [itertools.get_include()],
     zip_safe=False,
 )
