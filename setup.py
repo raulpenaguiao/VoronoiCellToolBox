@@ -7,7 +7,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name='VoronoiCellToolBox',
-    version="1.1.2",
+    version="1.1.3",
     author="Yelena Mandelshtam, Raul Penaguiao",
     author_email="raulpenaguiao@proton.me",
     license="GPL2+",
