@@ -89,7 +89,7 @@ def VCell(Q, **rangeorlist):
     return VC
 
 
-def pos(i, j, d):
+def pos(i: int, j: int, d: int) -> int:
     """
     Maps the position (i, j) on the $d \times d$ matrix to a list index, so that 
     each symmetric entry can be encoded in a list of size $\frac{d\times (d+1)}{2}$.
@@ -128,7 +128,7 @@ def matrixify(list_of_ute, d):
     Returns:
         list: A $d \times d$ matrix represented as a list of lists.
     """
-    return [[list_of_ute[pos(i, j, d)]  for j in range(d)] for i in range(d)]
+    return [[list_of_ute[int(pos(i, j, d))]  for j in range(d)] for i in range(d)]
 
 #calculates equation of wall in secondary cone
 def eq_of_wall(rvecs, nrvec, d, verbose = False):
