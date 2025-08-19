@@ -124,80 +124,197 @@ def matrixify(list_of_ute, d):
     Parameters:
         list_of_ute (list): The list of entries of the symmetric matrix.
         d (int): The dimension of the matrix.
-
+    
     Returns:
         list: A $d \times d$ matrix represented as a list of lists.
+    
+    Usage:
+        matrixify([3, 1, 5, 3, -1, 2], 3) #Returns [[3, 1, 5], [1, 3, -1], [5, -1, 2]]
     """
     return [[list_of_ute[int(pos(i, j, d))]  for j in range(d)] for i in range(d)]
 
 #calculates equation of wall in secondary cone
-def eq_of_wall(rvecs, nrvec, d, verbose = False):
+def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, verbose: bool = False) -> list:
+    """
+    Finds the linear inequality that a matrix must satisfy in order for a
+    particular potential relevant vector nonRelevantVectors to not be relevant due to the 
+    conditions imposed by the list of relevant vectors neighborVectors
+    Computes the equation of the wall in the secondary cone.
+
+    Parameters:
+        neighborVectors (list(vector)): The list of neighbor vectors.
+        isolatedVector (vector): The isolated vector.
+        d (int): The dimension of the matrix.
+        verbose (bool): Whether to print verbose output.
+
+    Returns:
+        list: The coefficients of the inequality on the matrix coefficients
+        defining the wall that decides if isolatedVector is relevant.
+
+    Usage:
+        rvecs = [(0, 1, 1), (1, 1, 1), (0, 0, 1)]
+        nrvec = [-1, 0, 0]
+        eq_of_wall(rvecs, nrvec, 3, True) #Returns [2, 2, 2, 0, 0, 0]
+
+    """
     if verbose:
-        print(rvecs, nrvec, d)
-    Tinv = Matrix(rvecs).inverse()
-    ineq = [0]*(d*(d+1)//2)
+        print(neighborVectors, isolatedVector, d)
+    Tinv = Matrix(neighborVectors).inverse()
+    inequalityCoefficients = [0]*(d*(d+1)//2)
     for i in range(0, d):
         for j in range(0, d):
-            ineq[pos(i, j, d)] += nrvec[i]*nrvec[j]
+            inequalityCoefficients[pos(i, j, d)] += isolatedVector[i]*isolatedVector[j]
             if(verbose):
-                print(nrvec[i]*nrvec[j], " - > (", i, ", ", j, ")")
+                print(isolatedVector[i]*isolatedVector[j], " - > (", i, ", ", j, ")")
     if(verbose): 
         print(Tinv)
     for i in range(0, d):
         for j in range(0, d):
             for k in range(0, d):
                 for l in range(0, d):
-                    ineq[pos(k, l, d)] -= nrvec[i]*Tinv[i][j]*rvecs[j][k]*rvecs[j][l]
+                    inequalityCoefficients[pos(k, l, d)] -= isolatedVector[i]*Tinv[i][j]*neighborVectors[j][k]*neighborVectors[j][l]
                     if ( verbose): 
-                        print( nrvec[i]*Tinv[i][j]*rvecs[j][k]*rvecs[j][l], " -> (", k,", ", l,")")
-                        print(" (", i, " , ", j, ", ", k ,", ", l, ") - ", nrvec[i], ", ", Tinv[i][j], ", ", rvecs[j][k], ", ", rvecs[j][l], " -> (", k, ", ", l, ") ")
-    return ineq #do not include b becuase it's homogeneous and b is always 0
+                        print( isolatedVector[i]*Tinv[i][j]*neighborVectors[j][k]*neighborVectors[j][l], " -> (", k,", ", l,")")
+                        print(" (", i, " , ", j, ", ", k ,", ", l, ") - ", isolatedVector[i], ", ", Tinv[i][j], ", ", neighborVectors[j][k], ", ", neighborVectors[j][l], " -> (", k, ", ", l, ") ")
+    return inequalityCoefficients #do not include b becuase it's homogeneous and b is always 0
 #\sum a_{i, j} * q_{i, j} <= 0 for newv to NOT be relevant   
 
 def reduce(v):
-    #lcm =  LCM_list([vi.denominator() for vi in v])
-    #return vector(gcdReduce([vi*lcm for vi in v]))
+    """
+    Reduces a vector by finding the least common multiple of its denominators
+    and scaling the vector accordingly.
+
+    Parameters:
+        v (list): The vector to be reduced.
+
+    Returns:
+        vector: The reduced vector.
+
+    Usage:
+        reduce([1/2, 2/3, 3/4]) #Returns [6, 8, 9]
+    """
     try:
         lcm =  LCM_list([vi.denominator() for vi in v])
     except:
-        return reduce([Rational(int(round(vi*10**9)),int(10**9)) for vi in v])
-        #return vector(gcdReduce([vi for vi in v]))
+        return reduce([Rational(int(round(float(vi)*10**9)),int(10**9)) for vi in v])
     return vector(gcdReduce([vi*lcm for vi in v]))
 
 def gcdReduce(v):
+    """
+    Reduces a vector of integers by finding the greatest common divisor of its components
+    and scaling the vector accordingly.
+
+    Parameters:
+        v (list): The vector to be reduced.
+
+    Returns:
+        vector: The reduced vector.
+
+    Usage:
+        gcdReduce([12, 24, 34]) #Returns [6, 12, 17]
+    """
     gcd = GCD_list(v)
     return [vi/gcd for vi in v]
 
 
 def gcd(a, b):
+    """
+    Computes the greatest common divisor of two integers.
+
+    Parameters:
+        a (int): The first integer.
+        b (int): The second integer.
+
+    Returns:
+        int: The greatest common divisor of a and b.
+
+    Usage:
+        gcd(48, 18) #Returns 6
+    """
     if (a < 0): return gcd(-a, b)
     if (a > b): return gcd(b, a)
     if (a < 1 and a > -1): return b
     return gcd(b%a, a)
 
 def GCD_list(v):
+    """
+    Computes the greatest common divisor of a list of integers.
+
+    Parameters:
+        v (list): The list of integers.
+
+    Returns:
+        int: The greatest common divisor of the integers in the list.
+
+    Usage:
+        GCD_list([102, 304, 54, 80]) #Returns 2
+    """
     if (len(v) == 0): return 1
     if (len(v) == 1): return v[0]
     if (len(v) == 2): return gcd(v[0], v[1])
     return GCD_list([gcd(v[0], v[1])] + v[2:] )
 
 def relevant_vector(Q, F):
+    """
+    For a facet F of the voronoi cell V, this function computes 
+    the corresponding relevant vector.
+
+    Parameters:
+        Q (Matrix): The metric matrix defining the Voronoi cell.
+        F (Facet): The facet for which to compute the relevant vector.
+
+    Returns:
+        Vector: The corresponding relevant vector.
+
+    Usage:
+        relevant_vector(Q, F)
+
+    Notes:
+        We assume that the facet F is a face of the Voronoi cell V, 
+        defined by the metric matrix Q.
+        The behaviour of this function is not defined when F is not a facet of V.
+    """
     v = (1/2)*vector(F.ambient_Hrepresentation()[0][1:])*(Matrix(Q).inverse())
-    return -reduce(v) #We have no idea why - seems to work every time but
+    return -reduce(v) 
+    #We have no idea why - seems to work every time but
     #it is either 1 or -1
     #1/2 * t * Q-1
     #This gives a scalar multiple of the relevant vector, but which one?
 
 def Qnorm(v, Q):
+    """
+
+    Parameters:
+
+    Returns:
+
+    Usage:
+    """
     return (Matrix([[vi] for vi in v]).transpose()*Matrix(Q)*Matrix([v]).transpose())[0][0]
 
 
 def eps(vlist, Q):
+    """
+
+    Parameters:
+
+    Returns:
+
+    Usage:
+    """
     #Given a list ov non-zero lattice points, eps = the equidistant tuple to all points and zero
     T = Matrix([list(v) for v in vlist])
     return (2*T*Matrix(Q)).inverse()*vector([Qnorm(v, Q) for v in vlist])
     
 def inc_fac(P, Q):
+    """
+
+    Parameters:
+
+    Returns:
+
+    Usage:
+    """
     vdict = {}
     for facet in P.facets():
         r_vec = relevant_vector(Q, facet)
@@ -259,10 +376,26 @@ def secondary_cone(Q, prv, verbose = False):
     return Polyhedron(ieqs = ineqs)
 
 def rayify(cone):
+    """
+
+    Parameters:
+
+    Returns:
+
+    Usage:
+    """
     return [ray[:] for ray in cone.Vrepresentation()[1:]]
 
 
 def pulling_triangulation(P):
+    """
+
+    Parameters:
+
+    Returns:
+
+    Usage:
+    """
     #print(P.vertices())
     if(dimension(P) < 2):
         return [list(P.vertices())]
