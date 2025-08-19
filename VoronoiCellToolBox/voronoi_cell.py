@@ -86,3 +86,30 @@ def VCell(Q, **rangeorlist):
     if VC.volume() != 1:
         raise Exception("relevant vector list not complete")
     return VC
+
+
+def pos(i, j, d):
+    """
+    Maps the position (i, j) on the $d \times d$ matrix to a list index, so that 
+    each symmetric entry can be encoded in a list of size $\frac{d\times (d+1)}{2}$.
+
+    Parameters:
+        i (int): The row index of the matrix.
+        j (int): The column index of the matrix.
+        d (int): The dimension of the matrix.
+
+    Usage:
+        pos(0, 1, 3)  # Returns 1
+        pos(1, 2, 3)  # Returns 4
+        pos(2, 2, 3)  # Returns 5
+
+    Behavior:
+        The function should return a unique index for each pair (i, j) such that
+        all pairs (i, j) with i < j are assigned indices before any pairs with
+        i = j.
+
+    Note:
+        Also works when i > j. Undefined when $j < 0$, $i < 0$, $i \geq d$ or $j \geq d$.
+    """
+    if i>j: return pos(j, i, d)
+    return i*d+j-(((i+1)*i)//2)
