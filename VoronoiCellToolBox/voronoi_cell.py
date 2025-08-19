@@ -267,7 +267,12 @@ def relevant_vector(Q, F):
         Vector: The corresponding relevant vector.
 
     Usage:
-        relevant_vector(Q, F)
+        #The following code prints the relevant vectors of each facet for d = 2
+        Q = [[2, -1], [-1, 2]]
+        VC = VCell(Q, range = 2)
+        list_facets = VC.facets()
+        for F in list_facets:
+            print(F.vertices(), " - ", relevant_vector(Q, F))
 
     Notes:
         We assume that the facet F is a face of the Voronoi cell V, 
