@@ -21,8 +21,8 @@ TODO examples
 import numpy
 import itertools
 import random
-from sage.all import Polyhedron, vector, dimension, Matrix, Rational, LCM_list
-
+from sage.all import Polyhedron, vector, dimension, Matrix, Rational
+from sage.arith.functions import LCM_list
 
 def VCell(Q, **rangeorlist):
     """
