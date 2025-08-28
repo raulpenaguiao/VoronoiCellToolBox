@@ -369,6 +369,7 @@ def secondary_cone(Q, verbose = False, **rangeorlist):
         secondary_cone(Q, prv)
     """
 
+    d = len(Q)
     prv = None
     if "range" in rangeorlist:
         r = rangeorlist["range"]
@@ -382,7 +383,6 @@ def secondary_cone(Q, verbose = False, **rangeorlist):
         raise Exception("A range or list of potential relevant vectors needs to be given.")
     
     VC = VCell(Q, list=prv)
-    d = len(Q)
     ifs = relevantVectorDictionary(VC, Q)
     nrvs = []
     rvs = [] #nrvs = prv - relevant vectors 
