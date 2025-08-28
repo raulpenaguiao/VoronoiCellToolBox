@@ -536,9 +536,12 @@ def Delset(Q, v, **rangeorlist):
         list: A list of vectors representing the Delaunay set.
 
     Usage:
-        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
-        VC = VCell(Q, range=2)
-        len(Delsets(VC, Q, range=2))
+        import random
+        Q = [[2, 1, 1], [1, 2, 1], [1, 1, 2]]
+        VC = VCell(Q, range=1)
+        vertices = VC.vertices()
+        v = vertices[random.randint(0, len(vertices))]
+        Delset(Q, v, range = 2)#[(0, 0, 0), (-1, 0, 1), (-1, 1, 0), (-1, 1, 1), (0, 0, 1), (0, 1, 0)]
     """
     d = len(Q)
 
