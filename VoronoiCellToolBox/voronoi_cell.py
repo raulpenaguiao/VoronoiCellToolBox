@@ -21,7 +21,7 @@ TODO examples
 import numpy
 import itertools
 import random
-from sage.all import Polyhedron, vector, dimension, Matrix, Rational
+from sage.all import Polyhedron, vector, dimension, Matrix, Rational, QQ
 from sage.arith.functions import LCM_list
 
 def VCell(Q, **rangeorlist):
@@ -456,3 +456,117 @@ def pulling_triangulation(P):
             for triangle in pulling_triangulation(F.as_polyhedron()):
                 ans += [[v] + triangle]
     return ans
+
+
+#function to output Delaunay sets associated to each vertex, outputs as a dictionary with vertices as keys
+def Delsets(VC, Q, **rangeorlist):
+    """
+    Computes a dictionary whereby each vertex in the Voronoi cell VC is associated with its Delaunay set.
+    That is the collection of lattice points that are closest to it.
+
+    Parameters:
+        VC (VCell): The Voronoi cell.
+        Q (Matrix): The quadratic form matrix.
+        rangeorlist (list or range): A list of potential relevant vectors, or a range to search for them.
+
+    Returns:
+        dict: A dictionary mapping each vertex to its Delaunay set.
+
+    Usage:
+        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
+        VC = VCell(Q, range=2)
+        len(Delsets(VC, Q, range=2))
+    """
+    d = len(Q)
+    prv = None
+    if "range" in rangeorlist:
+        r = rangeorlist["range"]
+        if (r <= 0):
+            raise Exception("The range must be a positive integer.")
+        prv = [list(vec) for vec in itertools.product(range(-r, r+1), repeat=d)]
+        prv.remove([0] * d)
+    elif "list" in rangeorlist:
+        prv = rangeorlist["list"]
+    else:
+        raise Exception("A range or list of potential relevant vectors needs to be given.")
+    
+
+    vertices = VC.vertices_list()
+    #loop through points p in pot_rel_vectors to check if distance from v to 0 is equal to distance to p
+    # Ensure Q is a SageMath matrix
+    Q = Matrix(QQ, Q)
+    
+    # Initialize the dictionary
+    output_dict = {}
+    
+    # Loop over each vertex
+    for v in vertices:
+        v = vector(QQ, v)  # Ensure v is a vector
+        distance_origin = (v * Q * v) # squared distance of vertex from the origin
+        
+        # Initialize an empty set for this vertex
+        delset = [tuple([0]*d)]
+        
+        # Loop over each point
+        for p in prv:
+            p = vector(QQ, p)  # Ensure p is a vector
+            distance_point = ((v-p) * Q * (v-p))  # squared distance of vertex to the point
+            
+            # Check if the distances match
+            if distance_origin == distance_point:
+                delset.append(tuple(p))  # Add the point to the set (convert to tuple for immutability)
+                
+        D = Polyhedron(vertices = delset)
+        # Add the set to the dictionary
+        output_dict[tuple(v)] = D
+    
+    return output_dict
+
+#function to output Delaunay set associated to any point in the VC (do not use this if running Delsets anyway, just use the dictionary)
+def Delset(Q, v, **rangeorlist):
+    """
+    For each vertex in the Voronoi cell VC computes the corresponding Delaunay set.
+
+    Parameters:
+        Q (Matrix): The quadratic form matrix.
+        v (Vector): The vertex for which to compute the Delaunay set.
+        rangeorlist (list or range): A list of potential relevant vectors, or a range to search for them.
+
+    Returns:
+        list: A list of vectors representing the Delaunay set.
+
+    Usage:
+        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
+        VC = VCell(Q, range=2)
+        len(Delsets(VC, Q, range=2))
+    """
+    d = len(Q)
+
+    prv = None
+    if "range" in rangeorlist:
+        r = rangeorlist["range"]
+        if (r <= 0):
+            raise Exception("The range must be a positive integer.")
+        prv = [list(vec) for vec in itertools.product(range(-r, r+1), repeat=d)]
+        prv.remove([0] * d)
+    elif "list" in rangeorlist:
+        prv = rangeorlist["list"]
+    else:
+        raise Exception("A range or list of potential relevant vectors needs to be given.")
+    
+    Q = Matrix(QQ, Q)
+    v = vector(QQ, v)  # Ensure v is a vector
+    distance_origin = (v * Q * v) # squared distance of vertex from the origin
+    # Initialize a del set for this vertex
+    delset = [tuple([0]*d)]
+        
+    # Loop over each point
+    for p in prv:
+        p = vector(QQ, p)  # Ensure p is a vector
+        distance_point = ((v-p) * Q * (v-p))  # squared distance of vertex to the point
+            
+        # Check if the distances match
+        if distance_origin == distance_point:
+            delset.append(tuple(p))  # Add the point to the set (convert to tuple for immutability)
+                
+    return delset
