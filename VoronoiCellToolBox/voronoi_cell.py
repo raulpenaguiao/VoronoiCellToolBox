@@ -369,18 +369,19 @@ def secondary_cone(Q, verbose = False, **rangeorlist):
         secondary_cone(Q, prv)
     """
 
+    prv = None
     if "range" in rangeorlist:
         r = rangeorlist["range"]
         if (r <= 0):
             raise Exception("The range must be a positive integer.")
-        VC = VCell(Q, range=r)
+        prv = [list(vec) for vec in itertools.product(range(-r, r+1), repeat=d)]
+        prv.remove([0] * d)
     elif "list" in rangeorlist:
         prv = rangeorlist["list"]
-        VC = VCell(Q, list=prv)
     else:
         raise Exception("A range or list of potential relevant vectors needs to be given.")
     
-
+    VC = VCell(Q, list=prv)
     d = len(Q)
     ifs = relevantVectorDictionary(VC, Q)
     nrvs = []
