@@ -89,7 +89,7 @@ def VCell(Q, **rangeorlist):
     return VC
 
 
-def pos(i: int, j: int, d: int) -> int:
+def FromMatrixPositionToListPosition(i: int, j: int, d: int) -> int:
     """
     Maps the position (i, j) on the $d \times d$ matrix to a list index, so that 
     each symmetric entry can be encoded in a list of size $\frac{d\times (d+1)}{2}$.
@@ -100,9 +100,9 @@ def pos(i: int, j: int, d: int) -> int:
         d (int): The dimension of the matrix.
 
     Usage:
-        pos(0, 1, 3)  # Returns 1
-        pos(1, 2, 3)  # Returns 4
-        pos(2, 2, 3)  # Returns 5
+        FromMatrixPositionToListPosition(0, 1, 3)  # Returns 1
+        FromMatrixPositionToListPosition(1, 2, 3)  # Returns 4
+        FromMatrixPositionToListPosition(2, 2, 3)  # Returns 5
 
     Behavior:
         The function should return a unique index for each pair (i, j) such that
@@ -112,7 +112,7 @@ def pos(i: int, j: int, d: int) -> int:
     Note:
         Also works when i > j. Undefined when $j < 0$, $i < 0$, $i \geq d$ or $j \geq d$.
     """
-    if i>j: return pos(j, i, d)
+    if i>j: return FromMatrixPositionToListPosition(j, i, d)
     return i*d+j-(((i+1)*i)//2)
 
 
@@ -131,7 +131,7 @@ def matrixify(list_of_ute, d):
     Usage:
         matrixify([3, 1, 5, 3, -1, 2], 3) #Returns [[3, 1, 5], [1, 3, -1], [5, -1, 2]]
     """
-    return [[list_of_ute[int(pos(i, j, d))]  for j in range(d)] for i in range(d)]
+    return [[list_of_ute[int(FromMatrixPositionToListPosition(i, j, d))]  for j in range(d)] for i in range(d)]
 
 #calculates equation of wall in secondary cone
 def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, verbose: bool = False) -> list:
@@ -163,7 +163,7 @@ def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, ve
     inequalityCoefficients = [0]*(d*(d+1)//2)
     for i in range(0, d):
         for j in range(0, d):
-            inequalityCoefficients[pos(i, j, d)] += isolatedVector[i]*isolatedVector[j]
+            inequalityCoefficients[FromMatrixPositionToListPosition(i, j, d)] += isolatedVector[i]*isolatedVector[j]
             if(verbose):
                 print(isolatedVector[i]*isolatedVector[j], " - > (", i, ", ", j, ")")
     if(verbose): 
@@ -172,14 +172,14 @@ def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, ve
         for j in range(0, d):
             for k in range(0, d):
                 for l in range(0, d):
-                    inequalityCoefficients[pos(k, l, d)] -= isolatedVector[i]*Tinv[i][j]*neighborVectors[j][k]*neighborVectors[j][l]
+                    inequalityCoefficients[FromMatrixPositionToListPosition(k, l, d)] -= isolatedVector[i]*Tinv[i][j]*neighborVectors[j][k]*neighborVectors[j][l]
                     if ( verbose): 
                         print( isolatedVector[i]*Tinv[i][j]*neighborVectors[j][k]*neighborVectors[j][l], " -> (", k,", ", l,")")
                         print(" (", i, " , ", j, ", ", k ,", ", l, ") - ", isolatedVector[i], ", ", Tinv[i][j], ", ", neighborVectors[j][k], ", ", neighborVectors[j][l], " -> (", k, ", ", l, ") ")
     return inequalityCoefficients #do not include b becuase it's homogeneous and b is always 0
 #\sum a_{i, j} * q_{i, j} <= 0 for newv to NOT be relevant   
 
-def reduce(v):
+def lcmReduce(v):
     """
     Reduces a vector by finding the least common multiple of its denominators
     and scaling the vector accordingly.
@@ -191,12 +191,12 @@ def reduce(v):
         vector: The reduced vector.
 
     Usage:
-        reduce([1/2, 2/3, 3/4]) #Returns [6, 8, 9]
+        lcmReduce([1/2, 2/3, 3/4]) #Returns [6, 8, 9]
     """
     try:
         lcm =  LCM_list([vi.denominator() for vi in v])
     except:
-        return reduce([Rational(int(round(float(vi)*10**9)),int(10**9)) for vi in v])
+        return lcmReduce([Rational(int(round(float(vi)*10**9)),int(10**9)) for vi in v])
     return vector(gcdReduce([vi*lcm for vi in v]))
 
 def gcdReduce(v):
@@ -280,45 +280,62 @@ def relevant_vector(Q, F):
         The behaviour of this function is not defined when F is not a facet of V.
     """
     v = (1/2)*vector(F.ambient_Hrepresentation()[0][1:])*(Matrix(Q).inverse())
-    return -reduce(v) 
+    return -lcmReduce(v) 
     #We have no idea why - seems to work every time but
     #it is either 1 or -1
     #1/2 * t * Q-1
     #This gives a scalar multiple of the relevant vector, but which one?
 
-def Qnorm(v, Q):
+def Qform(v, Q):
     """
-
+    For a matrix $Q$ defining a metric on $Z^d$, and a vector v, this function 
+    computes the quadratic form $v^T Q v$.
     Parameters:
-
+        v (Vector): The vector to be evaluated.
+        Q (Matrix): The metric matrix.
     Returns:
-
+        Scalar: The value of the quadratic form.
     Usage:
+        Qform(vector([1, 2]), Matrix([[2, 0], [0, 2]])) #Returns 8
     """
     return (Matrix([[vi] for vi in v]).transpose()*Matrix(Q)*Matrix([v]).transpose())[0][0]
 
 
-def eps(vlist, Q):
+def equidistantPoint(vlist, Q):
     """
-
+    Given a list of non-zero lattice points, 
+    this function computes the equidistant point to all points and zero
     Parameters:
+        vlist (list): A list of non-zero lattice points.
+        Q (Matrix): The metric matrix.
 
     Returns:
-
+        Vector: The equidistant point to all points and zero.
     Usage:
-    """
-    #Given a list ov non-zero lattice points, eps = the equidistant tuple to all points and zero
-    T = Matrix([list(v) for v in vlist])
-    return (2*T*Matrix(Q)).inverse()*vector([Qnorm(v, Q) for v in vlist])
+        equidistantPoint([vector([1, 0]), vector([0, 1])], Matrix([[1, 0], [0, 1]])) #Returns [1/2, 1/2]
     
-def inc_fac(P, Q):
+    Errors:
+        vlist is expected to be a square matrix
     """
+    T = Matrix([list(v) for v in vlist])
+    return (2*T*Matrix(Q)).inverse()*vector([Qform(v, Q) for v in vlist])
+    
+def relevantVectorDictionary(P, Q):
+    """
+    Computes a dictionary, exposing the relevant vectors associated with each vertex of P.
+    For each vertex v, the relevant vector relative to each facet incident to v is computed.
 
     Parameters:
+        P (Polyhedron): The polyhedron to be analyzed.
+        Q (Matrix): The metric matrix.
 
     Returns:
+        dict: A dictionary mapping each vertex of P to its incident relevant vectors.
 
     Usage:
+        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
+        P = VCell(Q, range = 2)
+        len(relevantVectorDictionary(P, Q))# Returns 24
     """
     vdict = {}
     for facet in P.facets():
@@ -331,27 +348,41 @@ def inc_fac(P, Q):
     return vdict
 
 
-def secondary_cone(Q, prv, verbose = False):
+def secondary_cone(Q, verbose = False, **rangeorlist):
     """
-    Computes the polyhedral cone that describes all PSD matrices with the same voronoi triangulation as Q
+    Computes a Polyhedron type object that describes all matrices Q' 
+    that have the same relevant vector structure as Q 
     
-    Parameters
-    ----------
-    Q : Square matrix
-    prv : potential relevant vectors
+    Parameters:
+        Q (Matrix): The metric matrix defining the Voronoi cell.
+        range = r (int): The range of potential relevant vectors.
+        OR
+        list = prv (list): A list of potential relevant vectors.
 
-    Returns
-    -------
+    Returns:
+        Polyhedron: The secondary cone of Q.
 
-    See Also
-    --------
-
-    Examples
-    --------
+    Usage:
+        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
+        prv = [list(vec) for vec in itertools.product(range(-2, 3), repeat=3)]
+        prv.remove([0] * 3)
+        secondary_cone(Q, prv)
     """
+
+    if "range" in rangeorlist:
+        r = rangeorlist["range"]
+        if (r <= 0):
+            raise Exception("The range must be a positive integer.")
+        VC = VCell(Q, range=r)
+    elif "list" in rangeorlist:
+        prv = rangeorlist["list"]
+        VC = VCell(Q, list=prv)
+    else:
+        raise Exception("A range or list of potential relevant vectors needs to be given.")
+    
+
     d = len(Q)
-    VC = VCell(prv, Q)
-    ifs = inc_fac(VC, Q)
+    ifs = relevantVectorDictionary(VC, Q)
     nrvs = []
     rvs = [] #nrvs = prv - relevant vectors 
     for v in prv:
@@ -375,7 +406,7 @@ def secondary_cone(Q, prv, verbose = False):
                 Qxeq_wall = 0
                 for i in range(d):
                     for j in range(i+1):
-                        Qxeq_wall += Q[i][j]*eq_wall[pos(i, j, d)]
+                        Qxeq_wall += Q[i][j]*eq_wall[FromMatrixPositionToListPosition(i, j, d)]
                 if verbose and Qxeq_wall < 0:
                     print(vec, " - ", vert, " - ", ifs[vert], " - ", eq_of_wall(ifs[vert], vec, d))
     return Polyhedron(ieqs = ineqs)
