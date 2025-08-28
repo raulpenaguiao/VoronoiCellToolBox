@@ -414,24 +414,35 @@ def secondary_cone(Q, verbose = False, **rangeorlist):
 
 def rayify(cone):
     """
-
+    This function is a much better way of describing the secondary cone.
     Parameters:
-
+        cone (Polyhedron): The cone to be rayified.
     Returns:
+        list: A list of rays representing the cone.
 
     Usage:
+        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
+        prv = [list(vec) for vec in itertools.product(range(-2, 3), repeat=3)]
+        prv.remove([0] * 3)
+        SC = secondary_cone(Q, prv)
+        rayify(SC)
     """
     return [ray[:] for ray in cone.Vrepresentation()[1:]]
 
 
 def pulling_triangulation(P):
     """
-
+    Computes a pulling triangulation of a polyhedron P.
     Parameters:
+        P (Polyhedron): The polyhedron to be triangulated.
 
     Returns:
+        list: A list of triangles representing the triangulation.
 
     Usage:
+        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
+        P = VCell(Q, range=2)
+        len(pulling_triangulation(P)) #Returns 34
     """
     #print(P.vertices())
     if(dimension(P) < 2):
