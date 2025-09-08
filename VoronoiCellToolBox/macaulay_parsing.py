@@ -16,7 +16,7 @@ def PrintWithBreaks(string, nChar):
             else:
                 ans += "\n "
                 counter = 0
-    print(ans)
+    return ans
 
 def Transpose(mat):
     return [[mat[i][j] for i in range(len(mat))] for j in range(len(mat[0]))]
