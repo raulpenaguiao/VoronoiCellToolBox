@@ -1,6 +1,6 @@
 import subprocess
 import pkg_resources
-import macaulay2
+from sage.interfaces.macaulay2 import macaulay2
 
 def load_m2_template(inputString):
     """
