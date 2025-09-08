@@ -4,7 +4,7 @@ from itertools import chain, combinations
 def macaulifyMatrix(lot):
     return "matrix" + str(lot).replace(')', '}').replace('(', '{').replace(']', '}').replace('[', '{')
 
-def PrintWithBreaks(string, nChar):
+def AddBreaks(string, nChar):
     ans = ""
     counter = 0
     for c in string:
@@ -35,4 +35,4 @@ def FormatPullingTrigMatrix(Q):
         string += "},"
     string = string[:-1]
     string += "}"
-    return PrintWithBreaks(string, 100)
+    return AddBreaks(string, 100)

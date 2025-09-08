@@ -7,7 +7,6 @@ def load_m2_template(inputString):
     """
     Load the templatecomputation.m2 file from your package
     """
-    print("Input String:", inputString)  # Debugging line
     try:
         template_content = pkg_resources.resource_string(
             'VoronoiCellToolBox', 'templatecomputation.m2'
@@ -34,11 +33,9 @@ def sage_to_macaulay2(Q):
     """
     # Step 1: Run Sage computation
     sage_string = FormatPullingTrigMatrix(Q)
-    print(sage_string)
     
     # Step 2: Prepare Macaulay2 input file
     m2_input_string = load_m2_template(sage_string)
-    print(m2_input_string)
     
     # Step 3: Run Macaulay2
     return macaulay2.eval(m2_input_string)
