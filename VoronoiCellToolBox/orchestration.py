@@ -1,6 +1,7 @@
 import subprocess
 import pkg_resources
 from sage.interfaces.macaulay2 import macaulay2
+from VoronoiCellToolBox.voronoi_cell import FormatPullingTrigMatrix
 
 def load_m2_template(inputString):
     """
