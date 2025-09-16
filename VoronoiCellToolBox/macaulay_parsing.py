@@ -2,7 +2,7 @@ from VoronoiCellToolBox.voronoi_cell import VCell, pulling_triangulation, releva
 from itertools import chain, combinations
 
 def macaulifyMatrix(lot):
-    return "matrix" + str(lot).replace(')', '}').replace('(', '{').replace(']', '}').replace('[', '{').replace("\n", "")
+    return "matrix" + str(lot).replace(')', '}').replace('(', '{').replace(']', '}').replace('[', '{')
 
 def AddBreaks(string, nChar):
     ans = ""

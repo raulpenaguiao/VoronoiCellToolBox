@@ -10,7 +10,7 @@ def load_m2_template(inputString):
     try:
         template_content = importlib.resources.read_text(
             'VoronoiCellToolBox', 'templatecomputation.m2'
-        )
+        ).replace("\n", "")
         if inputString is None:
             raise ValueError("inputString is None. FormatPullingTrigMatrix(Q) may have returned None.")
         return template_content.replace("{{SAGESTRING}};", inputString + ";")
