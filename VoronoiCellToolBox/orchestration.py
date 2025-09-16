@@ -13,7 +13,7 @@ def load_m2_template(inputString):
         )
         if inputString is None:
             raise ValueError("inputString is None. FormatPullingTrigMatrix(Q) may have returned None.")
-        return template_content.replace("{{SAGESTRING}}", inputString)
+        return template_content.replace("{{SAGESTRING}};", inputString + ";")
     except Exception as e:
         print(f"Error loading resource: {e}")
         raise FileNotFoundError("Could not find templatecomputation.m2 in package")
