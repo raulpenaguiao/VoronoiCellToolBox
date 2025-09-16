@@ -37,6 +37,7 @@ def chamberSecondMomentPolynomial(Q):
     
     # Step 2: Prepare Macaulay2 input file
     m2_input_string = load_m2_template(sage_string)
+    print("Debug 2: m2_input_string = " + m2_input_string)
     
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)

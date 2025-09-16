@@ -136,8 +136,7 @@ SmPoly = (d, matVertices) -> (
     return Zpoly
 );
 
-print(1+1);
-mat = value get {{SAGESTRING}};
+mat = {{SAGESTRING}};
 d = rank source  (mat_0)_0;
 Zpoly = SmPoly(d, mat);
 print(toString Zpoly);
