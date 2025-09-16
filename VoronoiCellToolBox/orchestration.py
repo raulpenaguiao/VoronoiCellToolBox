@@ -13,13 +13,14 @@ def load_m2_template(inputString):
         ).decode('utf-8')
         if inputString is None:
             raise ValueError("inputString is None. FormatPullingTrigMatrix(Q) may have returned None.")
+        print("Debug 1: string = " + inputString)
         return template_content.replace("{{SAGESTRING}}", inputString)
     except Exception as e:
         print(f"Error loading resource: {e}")
         raise FileNotFoundError("Could not find templatecomputation.m2 in package")
 
 
-def sage_to_macaulay2(Q):
+def chamberSecondMomentPolynomial(Q):
     """
     Execute a Sage computation and pass results to Macaulay2.
     
@@ -38,5 +39,6 @@ def sage_to_macaulay2(Q):
     m2_input_string = load_m2_template(sage_string)
     
     # Step 3: Run Macaulay2
-    return macaulay2.eval(m2_input_string)
+    result = macaulay2.eval(m2_input_string)
+    return str(result)
 
