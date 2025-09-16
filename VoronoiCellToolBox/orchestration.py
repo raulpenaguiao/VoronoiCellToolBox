@@ -29,7 +29,8 @@ def chamberSecondMomentPolynomial(Q):
         
     Returns:
     --------
-    a string
+    the string displaying the polynomial of the second moment of the Voronoi cell
+    for any matrix P in the same secondary cone as Q.
     """
     # Step 1: Run Sage computation
     sage_string = FormatPullingTrigMatrix(Q)
