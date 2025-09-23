@@ -617,7 +617,7 @@ def second_moment(Q, **rangeorlist):
         s = sum([vector(v) for v in triangle])/len(triangle)
         T = [list(vector(triangle[i]) - vector(triangle[0]))  for i in range(1, len(triangle))]
         print("T = ", T, " s = ", s)
-        detT = numpy.linalg.det(numpy.array(T))
+        detT = abs(numpy.linalg.det(numpy.array(T)))
         print("detT = ", detT)
         print(" ||v_i||_Q^2 = ", [Qform(v, Q) for v in triangle])
         print(" (d+1)*s = ", (d+1)*s)
