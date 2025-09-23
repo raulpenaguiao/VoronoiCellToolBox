@@ -18,6 +18,7 @@ TODO examples
 #                  https://www.gnu.org/licenses/
 # ****************************************************************************
 
+import math
 import numpy
 import itertools
 import random
@@ -602,7 +603,9 @@ def second_moment(Q, **rangeorlist):
     total = 0
     d = len(Q)
     detQ = numpy.linalg.det(numpy.array(Q))
-    dp2fact = numpy.math.factorial(d+2)
+
+    import math
+    dp2fact = math.factorial(d+2)
     print("d = ", d, " detQ = ", detQ, " (d+2)! = ", dp2fact)
     for triangle in pt:
         """
