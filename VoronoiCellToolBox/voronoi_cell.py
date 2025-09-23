@@ -615,7 +615,7 @@ def second_moment(Q, **rangeorlist):
         # Compute the second moment of the simplex defined by the vertices in triangle
         #  Compute the baricentre and the determinant of the matrix T
         s = sum([vector(v) for v in triangle])/len(triangle)
-        T = [list(triangle[i] - triangle[0]) for i in range(1, len(triangle))]
+        T = [list(vector(triangle[i]) - vector(triangle[0])  for i in range(1, len(triangle))]
         print("T = ", T, " s = ", s)
         detT = numpy.linalg.det(numpy.array(T))
         print("detT = ", detT)
