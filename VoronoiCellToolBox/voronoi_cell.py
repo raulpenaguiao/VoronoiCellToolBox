@@ -611,20 +611,20 @@ def second_moment(Q, **rangeorlist):
         """
         det T / (sqrt(det Q) (d+2)! ) ( || (d+1) s ||_Q^2 + sum ||v_i||_Q^2 )
         """
-        print("triangle = ", triangle)
+        #print("triangle = ", triangle)
         # Compute the second moment of the simplex defined by the vertices in triangle
         #  Compute the baricentre and the determinant of the matrix T
         s = sum([vector(v) for v in triangle])/len(triangle)
         T = [list(vector(triangle[i]) - vector(triangle[0]))  for i in range(1, len(triangle))]
-        print("T = ", T, " s = ", s)
+        #print("T = ", T, " s = ", s)
         detT = numpy.linalg.det(numpy.array(T))
-        print("detT = ", detT)
-        print(" ||v_i||_Q^2 = ", [Qform(v, Q) for v in triangle])
-        print(" (d+1)*s = ", (d+1)*s)
+        #print("detT = ", detT)
+        #print(" ||v_i||_Q^2 = ", [Qform(v, Q) for v in triangle])
+        #print(" (d+1)*s = ", (d+1)*s)
         partial_total = Qform((d+1)*s, Q) + sum([Qform(v, Q) for v in triangle])
-        print("partial_total = ",   partial_total)
+        #print("partial_total = ",   partial_total)
         total += detT * partial_total
-        print("total = ", total)
+        #print("total = ", total)
     print("final total = ", total)
     print("final denominator = ", (numpy.sqrt(detQ) * dp2fact))
-    return total / (numpy.sqrt(detQ) * dp2fact) 
+    return total / ( dp2fact) 
