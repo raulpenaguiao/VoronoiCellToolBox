@@ -624,5 +624,7 @@ def second_moment(Q, **rangeorlist):
         partial_total = Qform((d+1)*s, Q) + sum([Qform(v, Q) for v in triangle])
         print("partial_total = ",   partial_total)
         total += detT * partial_total
-
+        print("total = ", total)
+    print("final total = ", total)
+    print("final denominator = ", (numpy.sqrt(detQ) * dp2fact))
     return total / (numpy.sqrt(detQ) * dp2fact) 
