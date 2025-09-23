@@ -544,7 +544,6 @@ def Delset(Q, v, **rangeorlist):
         Delset(Q, v, range = 2)#[(0, 0, 0), (-1, 0, 1), (-1, 1, 0), (-1, 1, 1), (0, 0, 1), (0, 1, 0)]
     """
     d = len(Q)
-
     prv = None
     if "range" in rangeorlist:
         r = rangeorlist["range"]
@@ -573,3 +572,54 @@ def Delset(Q, v, **rangeorlist):
             delset.append(tuple(p))  # Add the point to the set (convert to tuple for immutability)
                 
     return delset
+
+
+def second_moment(Q, **rangeorlist):
+    """
+    Computes the second moment of the Voronoi cell defined by the quadratic form Q.
+
+    Parameters:
+        Q (Matrix): The quadratic form matrix.
+        rangeorlist (list or range): A list of potential relevant vectors, or a range to search for them.
+
+    Returns:
+        float: The second moment of the Voronoi cell.
+
+    Usage:
+        Q = [[2, -1], [-1, 2]]
+        second_moment(Q, range=2) #Returns 
+    """
+    VC = None
+    if "range" in rangeorlist:
+        r = rangeorlist["range"]
+        VC = VCell(Q, range=r)
+    elif "list" in rangeorlist:
+        prv = rangeorlist["list"]
+        VC = VCell(Q, list=prv)
+    else:
+        raise Exception("A range or list of potential relevant vectors needs to be given.")
+    pt = pulling_triangulation(VC)
+    total = 0
+    d = len(Q)
+    detQ = numpy.linalg.det(numpy.array(Q))
+    dp2fact = numpy.math.factorial(d+2)
+    print("d = ", d, " detQ = ", detQ, " (d+2)! = ", dp2fact)
+    for triangle in pt:
+        """
+        det T / (sqrt(det Q) (d+2)! ) ( || (d+1) s ||_Q^2 + sum ||v_i||_Q^2 )
+        """
+        print("triangle = ", triangle)
+        # Compute the second moment of the simplex defined by the vertices in triangle
+        #  Compute the baricentre and the determinant of the matrix T
+        s = sum(triangle)/len(triangle)
+        T = [list(triangle[i] - triangle[0]) for i in range(1, len(triangle))]
+        print("T = ", T, " s = ", s)
+        detT = numpy.linalg.det(numpy.array(T))
+        print("detT = ", detT)
+        print(" ||v_i||_Q^2 = ", [Qform(v, Q) for v in triangle])
+        print(" (d+1)*s = ", (d+1)*s)
+        partial_total = Qform((d+1)*s, Q) + sum([Qform(v, Q) for v in triangle])
+        print("partial_total = ",   partial_total)
+        total += detT * partial_total
+
+    return total / (numpy.sqrt(detQ) * dp2fact) 
