@@ -122,15 +122,15 @@ SmPoly = (d, matVertices) -> (
     Zpoly = 0;
     l = # matVertices;
     for i from 0 to l-1 do(
-        if({{VERBOSE}}) print(concatenate(toString i, " of total ", toString l, " - new loop"));
+        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
-        if({{VERBOSE}}) print(concatenate(toString i, " of total ", toString l, " - loop compute sm"));
+        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop compute sm")) else null;
         ply = sm(concatVertices, d, Q);
         lvalues = Listify(d);
-        if({{VERBOSE}}) print(concatenate("l values = ", lvalues));
+        if({{VERBOSE}}) then print(concatenate("l values = ", lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
-        if({{VERBOSE}}) print(concatenate("newPolyTriangle = ", newPolyTriangle));
-        if({{VERBOSE}}) print(concatenate(toString i, " of total ", toString l, " - loop add "));
+        if({{VERBOSE}}) then print(concatenate("newPolyTriangle = ", newPolyTriangle)) else null;
+        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
         Zpoly = Zpoly + newPolyTriangle;
     );
     return Zpoly
