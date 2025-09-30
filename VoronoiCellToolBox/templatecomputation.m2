@@ -1,4 +1,4 @@
---compute Q norms
+-- compute Q norms
 qnorm = (v, Q)-> (
     return transpose(v)*Q*v
 );
@@ -8,7 +8,7 @@ qnormmat = (B, Q, d) ->(
 );
 
 
---compute inverse of dxd matrix
+-- compute inverse of dxd matrix
 invCofactor = (A, d) ->(
     de = det A;
     mins = reverse (entries gens minors(d-1,A))_0; -- minors transpose
@@ -16,17 +16,17 @@ invCofactor = (A, d) ->(
     return matrix(answer)
 );
 
---compute vertices
+-- compute vertices
 vertex = (B, Q, d)->(
     return 1/2*invCofactor(Q, d)*inverse(transpose(B))*qnormmat(B, Q, d)
 );
 
---barycenter of vectors which are columns of L
+-- barycenter of vectors which are columns of L
 bary = (L, d)->(
     1/(d+1)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
 );
 
---create ring for symmetric matrix variables
+--c reate ring for symmetric matrix variables
 symMatricesRing = (d) -> (
     R = QQ[x_(1, 1)..x_(d, d)];
     I = ideal();
@@ -38,13 +38,13 @@ symMatricesRing = (d) -> (
     return R/I
 );
 
---helper function
+-- helper function
 isSame = (i, j) ->(
     if i === j then return 1
     else return 0
 );
 
---voronoi cell is a generic d-dim permutohedron
+-- voronoi cell is a generic d-dim permutohedron
 favouriteMatrix = (d) -> (
     ans = mutableMatrix map(QQ^d,QQ^d,(i,j)->isSame(i, j)*(d+1) - 1);
     for i from 0 to d-1 do(
@@ -58,7 +58,7 @@ favouriteMatrix = (d) -> (
     return matrix ans
 );
 
---listifying favorite matrix
+-- listifying favorite matrix
 Listify = (d) -> (
     lvalues = {};
     for i from 0 to d-1 do(
@@ -88,7 +88,7 @@ makepos = (polynom, lvalues, d, RingR) -> (
     else return polynom
 );
 
---compute second moment of simplex given by d+1 vertices as columns of L
+-- compute second moment of simplex given by d+1 vertices as columns of L
 -- actual second moment is also divided by dth root(det(Q))
 -- make sure L has a fraction so we're in the right field
 sm = (L, d, Q)->(
@@ -97,8 +97,8 @@ sm = (L, d, Q)->(
     return (det(T)*(qnorm((d+1)*bary(L, d), Q)+sum(lis))*(1/(d+2)!))_0_0
 );
 
---output is a list of vertices of a triangle suitable for input to sm function
---listMatrices is a list of matrices, each of which is a B matrix for a vertex
+-- output is a list of vertices of a triangle suitable for input to sm function
+-- listMatrices is a list of matrices, each of which is a B matrix for a vertex
 VectorizedVertex = (listMatrices, Q, d) -> ( 
     concatVertices = vertex(listMatrices_0, Q, d);
     for j from 1 to d do(
@@ -115,20 +115,22 @@ VectorizedVertex = (listMatrices, Q, d) -> (
 -- output is the rational function giving the second moment for any Voronoi cell in 
 -- the same chamber as our favorite matrix in terms of the entries of the matrix Q
 SmPoly = (d, matVertices) -> (
-    A = favouriteMatrix(d);
+    -- A = favouriteMatrix(d);
     G = d*(d+1)//2;
     R = QQ[q_0..q_(G-1)];
     Q = genericSymmetricMatrix(R, q_0, d);
     Zpoly = 0;
     l = # matVertices;
     for i from 0 to l-1 do(
-        -- print(concatenate(toString i, " of total ", toString l, " - new loop"));
+        if({{VERBOSE}}) print(concatenate(toString i, " of total ", toString l, " - new loop"));
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
-        -- print(concatenate(toString i, " of total ", toString l, " - loop compute sm"));
+        if({{VERBOSE}}) print(concatenate(toString i, " of total ", toString l, " - loop compute sm"));
         ply = sm(concatVertices, d, Q);
         lvalues = Listify(d);
+        if({{VERBOSE}}) print(concatenate("l values = ", lvalues));
         newPolyTriangle = makepos(ply, lvalues, d, R);
-        -- print(concatenate(toString i, " of total ", toString l, " - loop add "));
+        if({{VERBOSE}}) print(concatenate("newPolyTriangle = ", newPolyTriangle));
+        if({{VERBOSE}}) print(concatenate(toString i, " of total ", toString l, " - loop add "));
         Zpoly = Zpoly + newPolyTriangle;
     );
     return Zpoly
