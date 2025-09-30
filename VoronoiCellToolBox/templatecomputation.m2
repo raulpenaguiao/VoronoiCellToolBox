@@ -127,9 +127,9 @@ SmPoly = (d, matVertices) -> (
         if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop compute sm")) else null;
         ply = sm(concatVertices, d, Q);
         lvalues = Listify(d);
-        if({{VERBOSE}}) then print(concatenate("l values = ", lvalues)) else null;
+        if({{VERBOSE}}) then print(concatenate("l values = ", toString lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
-        if({{VERBOSE}}) then print(concatenate("newPolyTriangle = ", newPolyTriangle)) else null;
+        if({{VERBOSE}}) then print(concatenate("newPolyTriangle = ", toString newPolyTriangle)) else null;
         if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
         Zpoly = Zpoly + newPolyTriangle;
     );
