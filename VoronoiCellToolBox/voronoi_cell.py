@@ -577,7 +577,7 @@ def Delset(Q, v, **rangeorlist):
 
 def second_moment(Q, **rangeorlist):
     """
-    Computes the second moment of the Voronoi cell defined by the quadratic form Q.
+    Computes the second moment of the Voronoi cell defined by the quadratic form Q. TODO
 
     Parameters:
         Q (Matrix): The quadratic form matrix.

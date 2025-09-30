@@ -1,4 +1,3 @@
-restart;
 --compute Q norms
 qnorm = (v, Q)-> (
     return transpose(v)*Q*v
@@ -8,13 +7,14 @@ qnormmat = (B, Q, d) ->(
     return transpose( matrix{for i from 0 to d-1 list qnorm(matrix B_i, Q)})
 );
 
+
 --compute inverse of dxd matrix
 invCofactor = (A, d) ->(
     de = det A;
     mins = reverse (entries gens minors(d-1,A))_0; -- minors transpose
     answer = for i from 0 to d-1 list( for j from 0 to d-1 list mins_(j+d*i)*(-1)^(i+j)/de);
-    matrix(answer)
-    );
+    return matrix(answer)
+);
 
 --compute vertices
 vertex = (B, Q, d)->(
@@ -24,7 +24,7 @@ vertex = (B, Q, d)->(
 --barycenter of vectors which are columns of L
 bary = (L, d)->(
     1/(d+1)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
-    );
+);
 
 --create ring for symmetric matrix variables
 symMatricesRing = (d) -> (
@@ -88,7 +88,6 @@ makepos = (polynom, lvalues, d, RingR) -> (
     else return polynom
 );
 
-
 --compute second moment of simplex given by d+1 vertices as columns of L
 -- actual second moment is also divided by dth root(det(Q))
 -- make sure L has a fraction so we're in the right field
@@ -108,7 +107,6 @@ VectorizedVertex = (listMatrices, Q, d) -> (
     return concatVertices
 );
 
-
 -- Takes a dimension d and matVertices structure
 -- matVertices encodes a triangulation of the voronoi cell
 -- matvertices is a matrix, where each row corresponds to a triangle
@@ -124,13 +122,13 @@ SmPoly = (d, matVertices) -> (
     Zpoly = 0;
     l = # matVertices;
     for i from 0 to l-1 do(
-        print(concatenate(toString i, " of total ", toString l, " - new loop"));
+        -- print(concatenate(toString i, " of total ", toString l, " - new loop"));
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
-        print(concatenate(toString i, " of total ", toString l, " - loop compute sm"));
+        -- print(concatenate(toString i, " of total ", toString l, " - loop compute sm"));
         ply = sm(concatVertices, d, Q);
         lvalues = Listify(d);
         newPolyTriangle = makepos(ply, lvalues, d, R);
-        print(concatenate(toString i, " of total ", toString l, " - loop add "));
+        -- print(concatenate(toString i, " of total ", toString l, " - loop add "));
         Zpoly = Zpoly + newPolyTriangle;
     );
     return Zpoly
@@ -139,5 +137,4 @@ SmPoly = (d, matVertices) -> (
 mat = {{SAGESTRING}};
 d = rank source  (mat_0)_0;
 Zpoly = SmPoly(d, mat);
-print(toString Zpoly);
 toString Zpoly
