@@ -1,32 +1,112 @@
+-- qnorm(v, Q)
+-- Input: 
+--   v: a column vector (matrix)
+--   Q: a symmetric matrix
+-- Output:
+--   The quadratic form vᵗ Q v (a scalar)
+-- Description:
+--   Computes the Q-norm (quadratic form) of vector v with respect to matrix Q.
+-- Example:
+--   qnorm(matrix{{1},{2}}, matrix{{2,0},{0,3}})
+-- Output: 1*2*1 + 2*3*2 = 2 + 12 = 14
 -- compute Q norms
 qnorm = (v, Q)-> (
     return transpose(v)*Q*v
 );
+-- print(qnorm(matrix{{1},{2}}, matrix{{2,0},{0,3}}));
 
-qnormmat = (B, Q, d) ->(
+
+-- qNormMatrixFormat(B, Q, d)
+-- Input:
+--   B: a matrix whose columns are the desired vectors
+--   Q: a symmetric matrix
+--   d: dimension (number of columns in B)
+-- Output:
+--   Row vector of Q-norms for each column of B
+-- Description:
+--   Computes the Q-norm for each column vector in B and returns as a row matrix.
+-- Example:
+--   qNormMatrixFormat(matrix{{1,1},{0,1}}, matrix{{2,0},{0,3}}, 2)
+--   -- Output: matrix {{2}, {5}}
+qNormMatrixFormat = (B, Q, d) ->(
     return transpose( matrix{for i from 0 to d-1 list qnorm(matrix B_i, Q)})
 );
+-- print(toString qNormMatrixFormat(matrix{{1,1},{0,1}}, matrix{{2,0},{0,3}}, 2));
 
 
--- compute inverse of dxd matrix
-invCofactor = (A, d) ->(
+-- compute all 1-minors of a d x d matrix A
+-- listOf1Minors(A, d)
+-- Input:
+--   A: a d x d matrix
+--   d: dimension
+-- Output:
+--   A list of lists containing all 1-minors of A
+-- Description:
+--   Computes the matrix of cofactors (1-minors) of a square matrix A.
+--   The (i,j)th entry is the determinant of the (d-1)x(d-1) submatrix corresponding to removing row i and column j.
+-- Example:
+-- R = QQ[a,b,c,d,e,f,g,h,i]
+-- toString listOf1Minors(matrix{{a, b, c}, {d, e, f}, {g, h, i}}, 3);
+--   -- Output: {{-f*h+e*i, -f*g+d*i, -e*g+d*h}, {-c*h+b*i, -c*g+a*i, -b*g+a*h}, {-c*e+b*f, -c*d+a*f, -b*d+a*e}}
+listOf1Minors = (A, d) -> (
+    L = toList(0..d-1);
+    return for i from 0 to d-1 list (for j from 0 to d-1 list det submatrix(A, drop(L, {i, i}), drop(L, {j, j})));
+);
+-- R = QQ[a, b, c, d, e, f, g, h, i];
+-- print(toString listOf1Minors(matrix{{a, b, c}, {d, e, f}, {g, h, i}}, 3));
+
+
+-- inverseCofactorMatrix(A, d)
+-- Input:
+--   A: a d x d matrix
+--   d: dimension
+-- Output:
+--   The inverse of matrix A using the cofactor method
+-- Description:
+--   Computes the inverse of a square matrix using cofactors and determinant.
+-- Example:
+--  toString inverseCofactorMatrix(matrix{{2,1},{1,2}}, 2) 
+-- -- Output: matrix {{2/3, -1/3}, {-1/3, 2/3}}
+--  toString inverseCofactorMatrix(matrix{{a, b}, {c, d}}, 2)
+-- -- Output: matrix {{-d/(b*c-a*d), c/(b*c-a*d)}, {b/(b*c-a*d), -a/(b*c-a*d)}}
+inverseCofactorMatrix = (A, d) ->(
     de = det A;
-    mins = reverse (entries gens minors(d-1,A))_0; -- minors transpose
+    mins = flatten (listOf1Minors(A, d)); -- minors transpose
     answer = for i from 0 to d-1 list( for j from 0 to d-1 list mins_(j+d*i)*(-1)^(i+j)/de);
     return matrix(answer)
 );
+-- R = QQ[a, b, c, d];
+-- print(toString inverseCofactorMatrix(matrix{{2,1},{1,2}}, 2));
+-- print(toString inverseCofactorMatrix(matrix{{a, b}, {c, d}}, 2));
 
--- compute vertices
-vertex = (B, Q, d)->(
-    return 1/2*invCofactor(Q, d)*inverse(transpose(B))*qnormmat(B, Q, d)
+
+-- fromRelevantVectorsToVertex(B, Q, d)
+-- Input:
+--   B: matrix of relevant vectors, as column vectors
+--   Q: symmetric matrix
+--   d: dimension
+-- Output:
+--   Vertex coordinates as a column vector and as a polynomial in entries of Q
+-- Description:
+--   Computes the vertex of a Voronoi cell from relevant vectors and Q.
+-- Example:
+--   toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{2,0},{0,3}}, 2)
+-- -- Output: matrix {{1/2}, {1/2}}
+--   toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{q11, q12},{q12,q22}}, 2)
+-- -- Output: matrix {{(-q11*q22+q12*q22)/(2*q12^2-2*q11*q22)}, {(q11*q12-q11*q22)/(2*q12^2-2*q11*q22)}}
+fromRelevantVectorsToVertex = (B, Q, d)->(
+    return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d)
 );
+-- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{2,0},{0,3}}, 2));
+-- R = QQ[q11, q12, q22];
+-- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{q11, q12},{q12,q22}}, 2));
 
 -- barycenter of vectors which are columns of L
-bary = (L, d)->(
+barycentre = (L, d)->(
     1/(d+1)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
 );
 
---c reate ring for symmetric matrix variables
+--create ring for symmetric matrix variables
 symMatricesRing = (d) -> (
     R = QQ[x_(1, 1)..x_(d, d)];
     I = ideal();
@@ -91,18 +171,18 @@ makepos = (polynom, lvalues, d, RingR) -> (
 -- compute second moment of simplex given by d+1 vertices as columns of L
 -- actual second moment is also divided by dth root(det(Q))
 -- make sure L has a fraction so we're in the right field
-sm = (L, d, Q)->(
+secondMoment = (L, d, Q)->(
     T = submatrix'(L-matrix(for i from 0 to d list (L)_0),,{0});
     lis =  for i from 0 to d list qnorm(matrix(L_i), Q);
-    return (det(T)*(qnorm((d+1)*bary(L, d), Q)+sum(lis))*(1/(d+2)!))_0_0
+    return (det(T)*(qnorm((d+1)*barycentre(L, d), Q)+sum(lis))*(1/(d+2)!))_0_0
 );
 
--- output is a list of vertices of a triangle suitable for input to sm function
--- listMatrices is a list of matrices, each of which is a B matrix for a vertex
+-- output is a list of vertices of a triangle suitable for input to secondMoment function
+-- listMatrices is a list of matrices, each of which is a B matrix for a fromRelevantVectorsToVertex
 VectorizedVertex = (listMatrices, Q, d) -> ( 
-    concatVertices = vertex(listMatrices_0, Q, d);
+    concatVertices = fromRelevantVectorsToVertex(listMatrices_0, Q, d);
     for j from 1 to d do(
-        concatVertices = concatVertices | vertex(listMatrices_j, Q, d);
+        concatVertices = concatVertices | fromRelevantVectorsToVertex(listMatrices_j, Q, d);
     );
     return concatVertices
 );
@@ -110,8 +190,8 @@ VectorizedVertex = (listMatrices, Q, d) -> (
 -- Takes a dimension d and matVertices structure
 -- matVertices encodes a triangulation of the voronoi cell
 -- matvertices is a matrix, where each row corresponds to a triangle
--- in each row an entry corresponds to a vertex of the triangle
--- a vertex is encoded by a matrix
+-- in each row an entry corresponds to a fromRelevantVectorsToVertex of the triangle
+-- a fromRelevantVectorsToVertex is encoded by a matrix
 -- output is the rational function giving the second moment for any Voronoi cell in 
 -- the same chamber as our favorite matrix in terms of the entries of the matrix Q
 SmPoly = (d, matVertices) -> (
@@ -124,8 +204,8 @@ SmPoly = (d, matVertices) -> (
     for i from 0 to l-1 do(
         if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
-        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop compute sm")) else null;
-        ply = sm(concatVertices, d, Q);
+        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
+        ply = secondMoment(concatVertices, d, Q);
         lvalues = Listify(d);
         if({{VERBOSE}}) then print(concatenate("l values = ", toString lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
