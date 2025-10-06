@@ -102,11 +102,33 @@ fromRelevantVectorsToVertex = (B, Q, d)->(
 -- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{q11, q12},{q12,q22}}, 2));
 
 -- barycenter of vectors which are columns of L
+-- barycentre(L, d)
+-- Input:
+--   L: a matrix whose columns are vectors
+--   d: dimension (number of columns in L minus 1)
+-- Output:
+--   The barycenter (average) of the vectors as a column vector
+-- Description:
+--   Computes the barycenter of d+1 vectors (columns of L) by averaging each coordinate.
+-- Example:
+--   barycentre(matrix{{1,2,3},{4,5,6}}, 2)
+--   -- Output: matrix {{2}, {5}}
 barycentre = (L, d)->(
     1/(d+1)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
 );
 
 --create ring for symmetric matrix variables
+
+-- symMatricesRing(d)
+-- Input:
+--   d: dimension
+-- Output:
+--   Polynomial ring with variables for symmetric d x d matrix
+-- Description:
+--   Creates a polynomial ring with variables for entries of a symmetric matrix, enforcing symmetry by identifying x_(i,j) with x_(j,i).
+-- Example:
+--   symMatricesRing(2)
+--   -- Output: QQ[x_(1,1), x_(1,2), x_(2,2)]/(x_(1,2)-x_(2,1))
 symMatricesRing = (d) -> (
     R = QQ[x_(1, 1)..x_(d, d)];
     I = ideal();
@@ -119,12 +141,33 @@ symMatricesRing = (d) -> (
 );
 
 -- helper function
+-- isSame(i, j)
+-- Input:
+--   i, j: integers
+-- Output:
+--   1 if i == j, else 0
+-- Description:
+--   Returns 1 if the two indices are the same, 0 otherwise.
+-- Example:
+--   isSame(1,1) -- Output: 1
+--   isSame(1,2) -- Output: 0
 isSame = (i, j) ->(
     if i === j then return 1
     else return 0
 );
 
+
 -- voronoi cell is a generic d-dim permutohedron
+-- favouriteMatrix(d)
+-- Input:
+--   d: dimension
+-- Output:
+--   d x d matrix with d on diagonal, -1 elsewhere
+-- Description:
+--   Constructs a matrix with d on the diagonal and -1 off-diagonal, used for Voronoi cell computations.
+-- Example:
+--   favouriteMatrix(3)
+--   -- Output: matrix {{3,-1,-1},{-1,3,-1},{-1,-1,3}}
 favouriteMatrix = (d) -> (
     ans = mutableMatrix map(QQ^d,QQ^d,(i,j)->isSame(i, j)*(d+1) - 1);
     for i from 0 to d-1 do(
@@ -138,7 +181,17 @@ favouriteMatrix = (d) -> (
     return matrix ans
 );
 
+
 -- listifying favorite matrix
+-- Listify(d)
+-- Input:
+--   d: dimension
+-- Output:
+--   List of values for symmetric matrix entries: d for diagonal, -1 for off-diagonal
+-- Description:
+--   Produces a list encoding the favorite matrix for use in substitutions.
+-- Example:
+--   Listify(2) -- Output: {2, -1, 2}
 Listify = (d) -> (
     lvalues = {};
     for i from 0 to d-1 do(
@@ -151,9 +204,21 @@ Listify = (d) -> (
 );
 
 
-
 -- it takes a polynomial, a list of values, and flips the sign of the polynomial if 
 -- in the evaluation in these values it is negative
+-- makepos(polynom, lvalues, d, RingR)
+-- Input:
+--   polynom: a polynomial (rational function)
+--   lvalues: list of values for substitution
+--   d: dimension
+--   RingR: polynomial ring
+-- Output:
+--   The polynomial, possibly with sign flipped to ensure positivity at lvalues
+-- Description:
+--   Substitutes lvalues into polynom and flips sign if result is negative.
+-- Example:
+--   makepos(q_0+q_1, {2,-1}, 2, QQ[q_0,q_1])
+--   -- Output: q_0+q_1 or -(q_0+q_1) depending on sign
 makepos = (polynom, lvalues, d, RingR) -> (
     G = d*(d+1)//2;
     slst = {};
@@ -168,17 +233,42 @@ makepos = (polynom, lvalues, d, RingR) -> (
     else return polynom
 );
 
+
 -- compute second moment of simplex given by d+1 vertices as columns of L
 -- actual second moment is also divided by dth root(det(Q))
 -- make sure L has a fraction so we're in the right field
+-- secondMoment(L, d, Q)
+-- Input:
+--   L: matrix of d+1 vertices (columns)
+--   d: dimension
+--   Q: symmetric matrix
+-- Output:
+--   Rational function for the second moment of the simplex
+-- Description:
+--   Computes the second moment of a simplex given by L, normalized by det(Q).
+-- Example:
+--   secondMoment(matrix{{1,2,3},{4,5,6}}, 2, matrix{{2,0},{0,3}})
+--   -- Output: rational number
 secondMoment = (L, d, Q)->(
     T = submatrix'(L-matrix(for i from 0 to d list (L)_0),,{0});
     lis =  for i from 0 to d list qnorm(matrix(L_i), Q);
     return (det(T)*(qnorm((d+1)*barycentre(L, d), Q)+sum(lis))*(1/(d+2)!))_0_0
 );
 
+
 -- output is a list of vertices of a triangle suitable for input to secondMoment function
 -- listMatrices is a list of matrices, each of which is a B matrix for a fromRelevantVectorsToVertex
+-- VectorizedVertex(listMatrices, Q, d)
+-- Input:
+--   listMatrices: list of matrices (each for a vertex)
+--   Q: symmetric matrix
+--   d: dimension
+-- Output:
+--   Matrix of concatenated vertices
+-- Description:
+--   Computes and concatenates vertices from a list of relevant vector matrices.
+-- Example:
+--   VectorizedVertex({matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}}, matrix{{2,0},{0,3}}, 2)
 VectorizedVertex = (listMatrices, Q, d) -> ( 
     concatVertices = fromRelevantVectorsToVertex(listMatrices_0, Q, d);
     for j from 1 to d do(
@@ -187,6 +277,7 @@ VectorizedVertex = (listMatrices, Q, d) -> (
     return concatVertices
 );
 
+
 -- Takes a dimension d and matVertices structure
 -- matVertices encodes a triangulation of the voronoi cell
 -- matvertices is a matrix, where each row corresponds to a triangle
@@ -194,7 +285,17 @@ VectorizedVertex = (listMatrices, Q, d) -> (
 -- a fromRelevantVectorsToVertex is encoded by a matrix
 -- output is the rational function giving the second moment for any Voronoi cell in 
 -- the same chamber as our favorite matrix in terms of the entries of the matrix Q
-SmPoly = (d, matVertices) -> (
+-- SmPoly(d, matVertices)
+-- Input:
+--   d: dimension
+--   matVertices: list of matrices encoding triangulation
+-- Output:
+--   Rational function for the second moment polynomial of the Voronoi cell
+-- Description:
+--   Computes the second moment polynomial for a Voronoi cell using its triangulation.
+-- Example:
+--   SmPoly(2, { {matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}} })
+SmPoly = (d, matVertices, verbose) -> (
     -- A = favouriteMatrix(d);
     G = d*(d+1)//2;
     R = QQ[q_0..q_(G-1)];
@@ -202,15 +303,15 @@ SmPoly = (d, matVertices) -> (
     Zpoly = 0;
     l = # matVertices;
     for i from 0 to l-1 do(
-        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
+        if(verbose) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
-        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
+        if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
         ply = secondMoment(concatVertices, d, Q);
         lvalues = Listify(d);
-        if({{VERBOSE}}) then print(concatenate("l values = ", toString lvalues)) else null;
+        if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
-        if({{VERBOSE}}) then print(concatenate("newPolyTriangle = ", toString newPolyTriangle)) else null;
-        if({{VERBOSE}}) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
+        if(verbose) then print(concatenate("newPolyTriangle = ", toString newPolyTriangle)) else null;
+        if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
         Zpoly = Zpoly + newPolyTriangle;
     );
     return Zpoly
@@ -218,5 +319,5 @@ SmPoly = (d, matVertices) -> (
 
 mat = {{SAGESTRING}};
 d = rank source  (mat_0)_0;
-Zpoly = SmPoly(d, mat);
+Zpoly = SmPoly(d, mat, {{VERBOSE}});
 toString Zpoly
