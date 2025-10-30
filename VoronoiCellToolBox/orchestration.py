@@ -49,7 +49,7 @@ toString Zpoly
 """
 
     #parse m2 for this function
-    m2_input_string += secondMomentCode
+    #m2_input_string += secondMomentCode
     m2_input_string = m2_input_string.replace("{{SAGESTRING}};", sage_string.replace("\n", "") + ";")
     m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2 )
     m2_input_string = m2_input_string.replace("{{VERBOSE}}", "true")
