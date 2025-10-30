@@ -42,7 +42,6 @@ def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
     secondMomentCode = """
 mat = {{SAGESTRING}};
 metric_matrix = {{SAGESTRING2}};
-print(mat_0);
 d = numrows (mat_0)_0;
 Zpoly = SmPoly(d, mat, metric_matrix, {{VERBOSE}});
 toString Zpoly
@@ -52,7 +51,7 @@ toString Zpoly
     m2_input_string += secondMomentCode
     m2_input_string = m2_input_string.replace("{{SAGESTRING}};", sage_string.replace("\n", "") + ";")
     m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2 )
-    m2_input_string = m2_input_string.replace("{{VERBOSE}}", "true")
+    m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
     print("Debug 3: m2_input_string = " + m2_input_string)
 
     # Step 3: Run Macaulay2
