@@ -205,7 +205,7 @@ Listify = (matVertices) -> (
     );
     return lvalues
 );
-print(toString Listify(2)); -- {2, -1, 2}
+-- print(toString Listify(2)); -- {2, -1, 2}
 
 -- it takes a polynomial, a list of values, and flips the sign of the polynomial if 
 -- in the evaluation in these values it is negative
