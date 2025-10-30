@@ -40,12 +40,13 @@ def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
     print("Debug 2: m2_input_string = " + m2_input_string)
 
     secondMomentCode = """
-    mat = {{SAGESTRING}};
-    metric_matrix = {{SAGESTRING2}};
-    d = rank source  (mat_0)_0;
-    Zpoly = SmPoly(d, mat, metric_matrix, {{VERBOSE}});
-    toString Zpoly
-    """
+mat = {{SAGESTRING}};
+metric_matrix = {{SAGESTRING2}};
+print(mat_0);
+d = rank source  (mat_0)_0;
+Zpoly = SmPoly(d, mat, metric_matrix, {{VERBOSE}});
+toString Zpoly
+"""
 
     #parse m2 for this function
     m2_input_string += secondMomentCode
