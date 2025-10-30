@@ -37,7 +37,7 @@ def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
 
     # Step 2: Prepare Macaulay2 input file
     m2_input_string = load_m2_template()
-    print("Debug 2: m2_input_string = " + m2_input_string)
+    #print("Debug 2: m2_input_string = " + m2_input_string)
 
     secondMomentCode = """
 mat = {{SAGESTRING}};
