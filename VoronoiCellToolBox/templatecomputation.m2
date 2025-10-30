@@ -304,13 +304,13 @@ SmPoly = (d, matVertices, A, verbose) -> (
     R = QQ[q_0..q_(G-1)];
     Q = genericSymmetricMatrix(R, q_0, d);
     Zpoly = 0;
+    lvalues = Listify(A);
     l = # matVertices;
     for i from 0 to l-1 do(
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
         ply = secondMoment(concatVertices, d, Q);
-        lvalues = Listify(A);
         if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
         if(verbose) then print(concatenate("newPolyTriangle = ", toString newPolyTriangle)) else null;
