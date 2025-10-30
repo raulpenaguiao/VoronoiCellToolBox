@@ -36,3 +36,4 @@ def FormatPullingTrigMatrix(Q):
     string = string[:-1]
     string += "}"
     return AddBreaks(string, 100)
+

@@ -116,8 +116,8 @@ fromRelevantVectorsToVertex = (B, Q, d)->(
 barycentre = (L, d)->(
     1/(d+1)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
 );
+-- print(toString barycentre(matrix{{1,2,3},{4,5,6}}, 2)) -- matrix {{2}, {5}}
 
---create ring for symmetric matrix variables
 
 -- symMatricesRing(d)
 -- Input:
@@ -139,6 +139,7 @@ symMatricesRing = (d) -> (
     );
     return R/I
 );
+-- print(symMatricesRing(4));
 
 -- helper function
 -- isSame(i, j)
@@ -155,7 +156,8 @@ isSame = (i, j) ->(
     if i === j then return 1
     else return 0
 );
-
+-- print(toString isSame(1,1)); -- 1
+-- print(toString isSame(1,2)); -- 0
 
 -- voronoi cell is a generic d-dim permutohedron
 -- favouriteMatrix(d)
@@ -180,19 +182,20 @@ favouriteMatrix = (d) -> (
     );
     return matrix ans
 );
+-- print(toString favouriteMatrix(3)); -- matrix {{3,-1,-1},{-1,3,-1},{-1,-1,3}}
 
 
 -- listifying favorite matrix
 -- Listify(d)
 -- Input:
---   d: dimension
+--   matVertices: matrix with 
 -- Output:
 --   List of values for symmetric matrix entries: d for diagonal, -1 for off-diagonal
 -- Description:
 --   Produces a list encoding the favorite matrix for use in substitutions.
 -- Example:
 --   Listify(2) -- Output: {2, -1, 2}
-Listify = (d) -> (
+Listify = (matVertices) -> (
     lvalues = {};
     for i from 0 to d-1 do(
         for j from i to d-1 do(
@@ -202,7 +205,7 @@ Listify = (d) -> (
     );
     return lvalues
 );
-
+print(toString Listify(2)); -- {2, -1, 2}
 
 -- it takes a polynomial, a list of values, and flips the sign of the polynomial if 
 -- in the evaluation in these values it is negative
@@ -289,14 +292,14 @@ VectorizedVertex = (listMatrices, Q, d) -> (
 -- Input:
 --   d: dimension
 --   matVertices: list of matrices encoding triangulation
+--   A: metric symmetric matrix
 -- Output:
 --   Rational function for the second moment polynomial of the Voronoi cell
 -- Description:
 --   Computes the second moment polynomial for a Voronoi cell using its triangulation.
 -- Example:
 --   SmPoly(2, { {matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}} })
-SmPoly = (d, matVertices, verbose) -> (
-    -- A = favouriteMatrix(d);
+SmPoly = (d, matVertices, A, verbose) -> (
     G = d*(d+1)//2;
     R = QQ[q_0..q_(G-1)];
     Q = genericSymmetricMatrix(R, q_0, d);
@@ -307,7 +310,7 @@ SmPoly = (d, matVertices, verbose) -> (
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
         ply = secondMoment(concatVertices, d, Q);
-        lvalues = Listify(d);
+        lvalues = Listify(A);
         if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
         if(verbose) then print(concatenate("newPolyTriangle = ", toString newPolyTriangle)) else null;
@@ -316,8 +319,3 @@ SmPoly = (d, matVertices, verbose) -> (
     );
     return Zpoly
 );
-
-mat = {{SAGESTRING}};
-d = rank source  (mat_0)_0;
-Zpoly = SmPoly(d, mat, {{VERBOSE}});
-toString Zpoly
