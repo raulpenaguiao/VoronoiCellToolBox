@@ -41,8 +41,11 @@ def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
 
     secondMomentCode = """
 mat = {{SAGESTRING}};
+print(1 + 1);
 metric_matrix = {{SAGESTRING2}};
+print(1 + 2);
 d = numrows (mat_0)_0;
+print(1 + 3);
 Zpoly = SmPoly(d, mat, metric_matrix, {{VERBOSE}});
 toString Zpoly
 """
