@@ -52,9 +52,9 @@ toString Zpoly
     m2_input_string = m2_input_string.replace("{{SAGESTRING}};", sage_string.replace("\n", "") + ";")
     m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2 )
     if( verbose ):
-        m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
-    else:
         m2_input_string = m2_input_string.replace("{{VERBOSE}}", "true")
+    else:
+        m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
     #print("Debug 3: m2_input_string = " + m2_input_string)
     print(m2_input_string)
     # Step 3: Run Macaulay2
