@@ -103,7 +103,7 @@ fromRelevantVectorsToVertex = (B, Q, d, verbose)->(
     if (verbose) then print("Transpose of B: ", toString transpose(B)) else null;
     if (verbose) then print("Inverse of transpose of B: " , toString inverse(transpose(B))) else null;
     if (verbose) then print("Q-norm matrix format: ", toString qNormMatrixFormat(B, Q, d, false)) else null;
-    if (verbose) then print(1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
+    if (verbose) then print(" fromRelevantVectorsToVertex = ", 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
     return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, verbose)
 );
 -- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{2,0},{0,3}}, 2));
