@@ -56,6 +56,8 @@ toString Zpoly
 
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
+    if( verbose):
+        print("Debug 4: result = " + str(result))
     return str(result.splitlines()[-1])  # return only the last line which contains the polynomial
 
 
