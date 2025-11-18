@@ -94,7 +94,11 @@ inverseCofactorMatrix = (A, d) ->(
 -- -- Output: matrix {{1/2}, {1/2}}
 --   toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{q11, q12},{q12,q22}}, 2)
 -- -- Output: matrix {{(-q11*q22+q12*q22)/(2*q12^2-2*q11*q22)}, {(q11*q12-q11*q22)/(2*q12^2-2*q11*q22)}}
-fromRelevantVectorsToVertex = (B, Q, d)->(
+fromRelevantVectorsToVertex = (B, Q, d, verbose)->(
+    if (verbose) then print("Computing vertex from relevant vectors B = ", toString B, " and Q = ", toString Q) else null;
+    if (verbose) then print("Inverse cofactor matrix of Q: ", toString inverseCofactorMatrix(Q, d)) else null;
+    if (verbose) then print("Transpose of B: ", toString transpose(B)) else null;
+    if (verbose) then print("Inverse of transpose of B: " , toString inverse(transpose(B))) else null;
     return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d)
 );
 -- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{2,0},{0,3}}, 2));
@@ -272,10 +276,10 @@ secondMoment = (L, d, Q)->(
 --   Computes and concatenates vertices from a list of relevant vector matrices.
 -- Example:
 --   VectorizedVertex({matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}}, matrix{{2,0},{0,3}}, 2)
-VectorizedVertex = (listMatrices, Q, d) -> ( 
-    concatVertices = fromRelevantVectorsToVertex(listMatrices_0, Q, d);
+VectorizedVertex = (listMatrices, Q, d, verbose) -> ( 
+    concatVertices = fromRelevantVectorsToVertex(listMatrices_0, Q, d, verbose);
     for j from 1 to d do(
-        concatVertices = concatVertices | fromRelevantVectorsToVertex(listMatrices_j, Q, d);
+        concatVertices = concatVertices | fromRelevantVectorsToVertex(listMatrices_j, Q, d, verbose);
     );
     return concatVertices
 );
@@ -312,7 +316,7 @@ SmPoly = (d, matVertices, A, verbose) -> (
     l = # matVertices;
     for i from 0 to l-1 do(
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
-        concatVertices = VectorizedVertex(matVertices_i, Q, d);
+        concatVertices = VectorizedVertex(matVertices_i, Q, d, verbose);
         if(verbose) then print(toString concatVertices) else null;
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
         ply = secondMoment(concatVertices, d, Q);
