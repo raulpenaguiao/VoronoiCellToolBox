@@ -28,7 +28,10 @@ qnorm = (v, Q)-> (
 -- Example:
 --   qNormMatrixFormat(matrix{{1,1},{0,1}}, matrix{{2,0},{0,3}}, 2)
 --   -- Output: matrix {{2}, {5}}
-qNormMatrixFormat = (B, Q, d) ->(
+qNormMatrixFormat = (B, Q, d, verbose) ->(
+    if(verbose) then for i from 0 to d-1 do(
+        print("Computing Q-norm of vector ", toString B_i)
+    ) else null;
     return transpose( matrix{for i from 0 to d-1 list qnorm(matrix B_i, Q)})
 );
 -- print(toString qNormMatrixFormat(matrix{{1,1},{0,1}}, matrix{{2,0},{0,3}}, 2));
@@ -99,7 +102,9 @@ fromRelevantVectorsToVertex = (B, Q, d, verbose)->(
     if (verbose) then print("Inverse cofactor matrix of Q: ", toString inverseCofactorMatrix(Q, d)) else null;
     if (verbose) then print("Transpose of B: ", toString transpose(B)) else null;
     if (verbose) then print("Inverse of transpose of B: " , toString inverse(transpose(B))) else null;
-    return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d)
+    if (verbose) then print("Q-norm matrix format: ", toString qNormMatrixFormat(B, Q, d, false)) else null;
+    if (verbose) then print(1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
+    return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, verbose)
 );
 -- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{2,0},{0,3}}, 2));
 -- R = QQ[q11, q12, q22];
