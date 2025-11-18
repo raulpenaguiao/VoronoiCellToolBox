@@ -198,6 +198,7 @@ favouriteMatrix = (d) -> (
 -- Listify(d)
 -- Input:
 --   matVertices: square matrix 
+--   d: dimension
 -- Output:
 --   List of values for symmetric matrix entries listed in an n*(n+1)/2 sized list, 
 --      values from the diagonal to the right
@@ -205,16 +206,17 @@ favouriteMatrix = (d) -> (
 --   Produces a list encoding the matrix for use in substitutions.
 -- Example:
 --   Listify(matrix{{2, 1}, {1, 3}}) -- Output: {2, 1, 3}
-Listify = (matVertices) -> (
+Listify = (matVertices, d) -> (
     lvalues = {};
     for i from 0 to d-1 do(
         for j from i to d-1 do(
-            lvalues = append(lvalues, matVertices_(i,j)
+            lvalues = append(lvalues, matVertices_(i,j))
         );
     );
     return lvalues
 );
--- print(toString Listify(matrix{{2, 1}, {1, 3}})); -- {2, 1, 3}
+-- print(toString Listify(matrix{{2, 1}, {1, 3}}, 2)); {2, 1, 3}
+
 
 -- it takes a polynomial, a list of values, and flips the sign of the polynomial if 
 -- in the evaluation in these values it is negative
@@ -318,7 +320,7 @@ SmPoly = (d, matVertices, A, verbose) -> (
     R = QQ[q_0..q_(G-1)];
     Q = genericSymmetricMatrix(R, q_0, d);
     Zpoly = 0;
-    lvalues = Listify(A);
+    lvalues = Listify(A, d);
     l = # matVertices;
     for i from 0 to l-1 do(
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
