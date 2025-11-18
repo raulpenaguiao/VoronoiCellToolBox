@@ -300,8 +300,8 @@ VectorizedVertex = (listMatrices, Q, d) -> (
 -- Example:
 --   SmPoly(2, { {matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}} })
 SmPoly = (d, matVertices, A, verbose) -> (
-    print("Starting SmPoly computation for dimension " + toString(d));
-    print("Number of triangles: " + toString(#matVertices));
+    print("Starting SmPoly computation for dimension ", toString(d));
+    print("Number of triangles: ", toString(#matVertices));
     if(verbose) then print("Verbose mode enabled") else print("Verbose mode disabled");
     G = d*(d+1)//2;
     R = QQ[q_0..q_(G-1)];
