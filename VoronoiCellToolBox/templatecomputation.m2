@@ -302,7 +302,8 @@ VectorizedVertex = (listMatrices, Q, d) -> (
 SmPoly = (d, matVertices, A, verbose) -> (
     if(verbose) then print("Starting SmPoly computation for dimension ", toString(d)) else null;
     if(verbose) then print("Number of triangles: ", toString(#matVertices)) else null;
-    if(verbose) then print("Verbose mode enabled") else print("Verbose mode disabled");
+    if(verbose) then print("Verbose mode enabled") else null;
+    if(verbose) then print("Vertex matrices", toString matVertices) else null;
     G = d*(d+1)//2;
     R = QQ[q_0..q_(G-1)];
     Q = genericSymmetricMatrix(R, q_0, d);
