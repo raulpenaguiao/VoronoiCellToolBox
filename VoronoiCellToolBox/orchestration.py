@@ -51,12 +51,15 @@ toString Zpoly
     m2_input_string += secondMomentCode
     m2_input_string = m2_input_string.replace("{{SAGESTRING}};", sage_string.replace("\n", "") + ";")
     m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2 )
-    m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
+    if( verbose ):
+        m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
+    else:
+        m2_input_string = m2_input_string.replace("{{VERBOSE}}", "true")
     #print("Debug 3: m2_input_string = " + m2_input_string)
-
+    print(m2_input_string)
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
-    if( verbose):
+    if( verbose ):
         print("Debug 4: result = " + str(result))
     return str(result.splitlines()[-1])  # return only the last line which contains the polynomial
 
