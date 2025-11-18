@@ -300,8 +300,8 @@ VectorizedVertex = (listMatrices, Q, d) -> (
 -- Example:
 --   SmPoly(2, { {matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}} })
 SmPoly = (d, matVertices, A, verbose) -> (
-    print("Starting SmPoly computation for dimension ", toString(d));
-    print("Number of triangles: ", toString(#matVertices));
+    if(verbose) then print("Starting SmPoly computation for dimension ", toString(d)) else null;
+    if(verbose) then print("Number of triangles: ", toString(#matVertices)) else null;
     if(verbose) then print("Verbose mode enabled") else print("Verbose mode disabled");
     G = d*(d+1)//2;
     R = QQ[q_0..q_(G-1)];
@@ -312,6 +312,7 @@ SmPoly = (d, matVertices, A, verbose) -> (
     for i from 0 to l-1 do(
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
         concatVertices = VectorizedVertex(matVertices_i, Q, d);
+        if(verbose) then print(toString concatVertices) else null;
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
         ply = secondMoment(concatVertices, d, Q);
         if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;

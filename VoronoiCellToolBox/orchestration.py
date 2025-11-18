@@ -56,8 +56,6 @@ toString Zpoly
     else:
         m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
     #print("Debug 3: m2_input_string = " + m2_input_string)
-    print("TEST")
-    print(m2_input_string)
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
     if( verbose ):
