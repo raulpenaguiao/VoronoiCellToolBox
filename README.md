@@ -42,3 +42,10 @@ If the webpage displays an error `Access to the file was denied` then simply ope
 
 sage: from VoronoiCellToolBox.voronoi_cell import VCell
 sage: VCell([[2, -1], [-1, 2]], range=2)
+
+
+## Unit tests
+
+```
+sage -python -m unittest discover -s tests -v
+```
