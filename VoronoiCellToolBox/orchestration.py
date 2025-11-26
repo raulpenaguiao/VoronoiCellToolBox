@@ -30,6 +30,7 @@ def barycentre(V, verbose=False):
     --------
     A vector representing the barycentre of the list of vectors V.
     """
+    #print("\nEntering barycentre function")
     # Step 1: Parse input vectors into Macaulay2 format
     Vmatrix = [[V[i][j] for j in range(len(V[0]))] for i in range(len(V))]#We don't assume V is a matrix
     string_vectors = "matrix " + str(Vmatrix).replace("]", "}").replace("[", "{")
@@ -39,10 +40,13 @@ def barycentre(V, verbose=False):
 
     #Step 3: Add the code to compute barycentre
     barycentreCode = """
-toString barycentre({{VECTORS}}, {{DIMENSION}}, {{VERBOSE}});
+toString barycentre({{VECTORS}}, {{DIMENSION}})
     """.replace("{{VECTORS}}", string_vectors) \
-       .replace("{{DIMENSION}}", str(len(V[0]))) \
+       .replace("{{DIMENSION}}", str(len(V))) \
        .replace("{{VERBOSE}}", "true" if verbose else "false")
+    
+    #print("Debug 3: m2_input_string = " + m2_input_string)
+    #print("Debug 4: barycentreCode = " + barycentreCode)
 
     #Step 4: Run Macaulay2
     result = macaulay2.eval(m2_input_string + barycentreCode)
@@ -50,7 +54,7 @@ toString barycentre({{VECTORS}}, {{DIMENSION}}, {{VERBOSE}});
     #Step 5: Parse output back into Sage vector
     result = result.splitlines()[-1]  # get only the last line
     result = result.replace("matrix {{", "").replace("}}", "")
-    result = [[float(x)] for x in result.split("}, {")]
+    result = [[eval(str(x))] for x in result.split("}, {")]
 
     return result
 

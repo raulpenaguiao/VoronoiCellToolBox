@@ -104,6 +104,8 @@ fromRelevantVectorsToVertex = (B, Q, d, verbose)->(
     if (verbose) then print("Inverse of transpose of B: " , toString inverse(transpose(B))) else null;
     if (verbose) then print("Q-norm matrix format: ", toString qNormMatrixFormat(B, Q, d, false)) else null;
     if (verbose) then print(" fromRelevantVectorsToVertex = ", 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
+    if (verbose) then print(" fromRelevantVectorsToVertex part1 = ", inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
+    if (verbose) then print(" fromRelevantVectorsToVertex part2 = ", inverseCofactorMatrix(Q, d)) else null;
     return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, verbose)
 );
 -- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{2,0},{0,3}}, 2));
@@ -123,7 +125,8 @@ fromRelevantVectorsToVertex = (B, Q, d, verbose)->(
 --   barycentre(matrix{{1,2,3},{4,5,6}}, 2)
 --   -- Output: matrix {{2}, {5}}
 barycentre = (L, d)->(
-    1/(d+1)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
+    numberOfColumns = numColumns L;
+    (1/numberOfColumns)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
 );
 -- print(toString barycentre(matrix{{1,2,3},{4,5,6}}, 2)) -- matrix {{2}, {5}}
 

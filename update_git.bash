@@ -1,3 +1,4 @@
+sage -python -m unittest discover -s tests -v
 git add setup.py update_git.bash 
 git add VoronoiCellToolBox/orchestration.py VoronoiCellToolBox/templatecomputation.m2 
 git add demo_secondmoment.ipynb demo_interfaceM2.ipynb
