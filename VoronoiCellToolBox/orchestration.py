@@ -74,8 +74,8 @@ def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
     # Step 1: Run Sage computation
     sage_string = FormatPullingTrigMatrix(Q)
     matrix_m2 = macaulifyMatrix(Q)
-    if(verbose):
-        print("Debug 1: matrix_m2 = " + matrix_m2)
+    #if(verbose):
+    #    print("Debug 1: matrix_m2 = " + matrix_m2)
     
     # Step 2: Prepare Macaulay2 input file
     m2_input_string = load_m2_template()
@@ -97,7 +97,7 @@ toString Zpoly
         m2_input_string = m2_input_string.replace("{{VERBOSE}}", "true")
     else:
         m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
-    print("Debug 3: m2_input_string = " + m2_input_string)
+    #print("Debug 3: m2_input_string = " + m2_input_string)
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
     if( verbose ):

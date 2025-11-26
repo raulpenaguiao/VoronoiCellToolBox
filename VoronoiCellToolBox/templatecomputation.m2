@@ -101,7 +101,7 @@ fromRelevantVectorsToVertex = (B, Q, d, verbose)->(
     -- if (verbose) then print("Transpose of B: ", toString transpose(B)) else null;
     -- if (verbose) then print("Inverse of transpose of B: " , toString inverse(transpose(B))) else null;
     -- if (verbose) then print("Q-norm matrix format: ", toString qNormMatrixFormat(B, Q, d, false)) else null;
-    if (verbose) then print(" fromRelevantVectorsToVertex = ", 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
+    -- if (verbose) then print(" fromRelevantVectorsToVertex = ", toString 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
     -- if (verbose) then print(" fromRelevantVectorsToVertex part1 = ", inverse(transpose(B))*qNormMatrixFormat(B, Q, d, false)) else null;
     -- if (verbose) then print(" fromRelevantVectorsToVertex part2 = ", inverseCofactorMatrix(Q, d)) else null;
     return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, verbose)
@@ -326,13 +326,13 @@ SmPoly = (d, matVertices, A, verbose) -> (
     for i from 0 to l-1 do(
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
         concatVertices = VectorizedVertex(matVertices_i, Q, d, verbose);
-        if(verbose) then print(toString concatVertices) else null;
-        if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
+        -- if(verbose) then print(toString concatVertices) else null;
+        -- if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
         ply = secondMoment(concatVertices, d, Q);
-        if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;
+        -- if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
         if(verbose) then print(concatenate("newPolyTriangle = ", toString newPolyTriangle)) else null;
-        if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
+        -- if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
         Zpoly = Zpoly + newPolyTriangle;
     );
     return Zpoly
