@@ -11,6 +11,7 @@
 --   barycentre(matrix{{1,2,3},{4,5,6}}, 2)
 --   -- Output: matrix {{2}, {5}}
 barycentre = (L, d)->(
-    1/(d+1)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
+    numberOfColumns = numColumns L;
+    (1/numberOfColumns)*transpose(matrix{for i from 0 to d-1 list sum((entries(transpose(L))_i))})
 );
 -- print(toString barycentre(matrix{{1,2,3},{4,5,6}}, 2)) -- matrix {{2}, {5}}

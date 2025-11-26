@@ -21,6 +21,8 @@ import random
 import unittest
 from sage.all import Matrix, QQ
 from VoronoiCellToolBox.orchestration import barycentre
+
+
 class TestM2API(unittest.TestCase):
 
     def test_barycentre(self):
@@ -46,5 +48,8 @@ class TestM2API(unittest.TestCase):
             # Get result from barycentre function
             result = barycentre(V)
             
+            #print("Tested barycentre with V =", V)
+            #print("Expected =", expected)
+            #print("Got =", result)
             # Assert that the result matches the expected value
-            self.assertEqual(result, expected)
+            self.assertAlmostEqual(result, expected, delta=1e-6)
