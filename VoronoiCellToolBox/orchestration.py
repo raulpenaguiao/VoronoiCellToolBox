@@ -3,20 +3,56 @@ from importlib.resources import files
 from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
 
-def load_m2_template():
+def load_m2_template(template_name="templatecomputation.m2"):
     """
     Load the templatecomputation.m2 file from your package
     """
     try:
         template_content = files("VoronoiCellToolBox") \
-            .joinpath("templatecomputation.m2") \
+            .joinpath(template_name) \
             .read_text()
         
         return template_content
     except Exception as e:
         print(f"Error loading resource: {e}")
-        raise FileNotFoundError("Could not find templatecomputation.m2 in package")
+        raise FileNotFoundError(f"Could not find {template_name} in package")
 
+
+def barycentre(V, verbose=False):
+    """
+    Uses macaulay2 to compute the barycentre of a collection of vectors.
+    
+    Parameters:
+    -----------
+    V : a list of vectors
+        
+    Returns:
+    --------
+    A vector representing the barycentre of the list of vectors V.
+    """
+    # Step 1: Parse input vectors into Macaulay2 format
+    Vmatrix = [[V[i][j] for j in range(len(V[0]))] for i in range(len(V))]#We don't assume V is a matrix
+    string_vectors = "matrix " + str(Vmatrix).replace("]", "}").replace("[", "{")
+
+    # Step 2: Prepare Macaulay2 input file
+    m2_input_string = load_m2_template("function_barycentre.m2")
+
+    #Step 3: Add the code to compute barycentre
+    barycentreCode = """
+toString barycentre({{VECTORS}}, {{DIMENSION}}, {{VERBOSE}});
+    """.replace("{{VECTORS}}", string_vectors) \
+       .replace("{{DIMENSION}}", str(len(V[0]))) \
+       .replace("{{VERBOSE}}", "true" if verbose else "false")
+
+    #Step 4: Run Macaulay2
+    result = macaulay2.eval(m2_input_string + barycentreCode)
+
+    #Step 5: Parse output back into Sage vector
+    result = result.splitlines()[-1]  # get only the last line
+    result = result.replace("matrix {{", "").replace("}}", "")
+    result = [[float(x)] for x in result.split("}, {")]
+
+    return result
 
 def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
     """
