@@ -1,10 +1,20 @@
 # VoronoiCellToolBox/__init__.py
 __all__ = [
-    "VCell", 
+    "VCell",
     "eq_of_wall",
     "Qform",
     "secondary_cone",
     "rayify",
     "pulling_triangulation",
     "Delsets",
-    "FormatPullingTrigMatrix"]
+    "FormatPullingTrigMatrix",
+    "second_moment",
+    "normalizedChamberSecondMomentPolynomial",
+    "qnorm_m2",
+    "qNormMatrixFormat_m2",
+    "listOf1Minors_m2",
+    "inverseCofactorMatrix_m2",
+    "fromRelevantVectorsToVertex_m2",
+    "barycentre_m2",
+    "secondMoment_m2",
+    "VectorizedVertex_m2"]
