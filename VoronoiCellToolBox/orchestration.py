@@ -102,7 +102,10 @@ toString Zpoly
     result = macaulay2.eval(m2_input_string)
     if( verbose ):
         print("Debug 4: result = " + str(result))
-    return str(result.splitlines()[-1])  # return only the last line which contains the polynomial
+    result = str(result.splitlines()[-1]) 
+    if '=' in result:
+        result = result.split('=')[1].strip()
+    return result  # return only the last line which contains the polynomial
 
 
 def qnorm_m2(v, Q):
