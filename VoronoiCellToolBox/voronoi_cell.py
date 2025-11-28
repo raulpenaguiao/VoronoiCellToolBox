@@ -575,6 +575,97 @@ def Delset(Q, v, **rangeorlist):
     return delset
 
 
+def VertexFromRelevantVectors(B, Q):
+    """
+    Computes the vertex coordinates from a matrix of relevant vectors using the formula:
+    \vec{v} = \frac{1}{2} Q^{-1}(B^T)^{-1}b_Q
+
+    where b_Q is a vector whose i-th component is the Q-norm of the i-th column of B.
+
+    Parameters:
+        B (Matrix): A d x d matrix where columns are relevant vectors
+        Q (Matrix): The positive definite metric matrix
+
+    Returns:
+        Vector: The computed vertex coordinates
+
+    Usage:
+        Q = [[2, -1], [-1, 2]]
+        B = [[1, 0], [0, 1]]
+        VertexFromRelevantVectors(B, Q)
+    """
+    d = len(Q)
+    Q_matrix = Matrix(Q)
+    B_matrix = Matrix(B)
+
+    # Compute b_Q: Q-norms of each column of B
+    b_Q = vector([Qform(B_matrix.column(i), Q_matrix) for i in range(d)])
+
+    # Compute (B^T)^{-1} * b_Q
+    B_T_inv = B_matrix.transpose().inverse()
+    intermediate = B_T_inv * b_Q
+
+    # Compute Q^{-1} * intermediate
+    Q_inv = Q_matrix.inverse()
+    result = (Rational(1, 2)) * Q_inv * intermediate
+
+    return result
+
+
+def secondMomentMatrix(Q, **rangeorlist):
+    """
+    Computes the second moment of the Voronoi cell defined by the quadratic form Q,
+    in the inherited metric given by Q.
+
+    The computation uses the pulling triangulation and the formula:
+    SM_Q(T) = (det(T) / (sqrt(det Q) * (d+2)!)) * (||(d+1)*s_hat||_Q^2 + sum_i ||s_i||_Q^2)
+
+    where T is the matrix of edge vectors, s_hat is the barycenter, and s_i are the vertices.
+
+    Parameters:
+        Q (Matrix): The positive definite metric matrix.
+        rangeorlist (list or range): A list of potential relevant vectors, or a range to search for them.
+
+    Returns:
+        float: The second moment of the Voronoi cell.
+
+    Usage:
+        Q = [[2, -1], [-1, 2]]
+        secondMomentMatrix(Q, range=2)
+    """
+    VC = None
+    if "range" in rangeorlist:
+        r = rangeorlist["range"]
+        VC = VCell(Q, range=r)
+    elif "list" in rangeorlist:
+        prv = rangeorlist["list"]
+        VC = VCell(Q, list=prv)
+    else:
+        raise Exception("A range or list of potential relevant vectors needs to be given.")
+
+    pt = pulling_triangulation(VC)
+    total = 0
+    d = len(Q)
+    detQ = numpy.linalg.det(numpy.array(Q))
+
+    dp2fact = math.factorial(d+2)
+
+    for triangle in pt:
+        # Compute the second moment of the simplex defined by the vertices in triangle
+        # Compute the barycenter
+        s_hat = sum([vector(v) for v in triangle])/len(triangle)
+
+        # Compute the matrix T of edge vectors (determinant)
+        T = [list(vector(triangle[i]) - vector(triangle[0])) for i in range(1, len(triangle))]
+        detT = abs(numpy.linalg.det(numpy.array(T)))
+
+        # Compute the second moment contribution: det(T) / (sqrt(det Q) * (d+2)!) * (||(d+1)*s||_Q^2 + sum ||v_i||_Q^2)
+        partial_total = Qform((d+1)*s_hat, Q) + sum([Qform(v, Q) for v in triangle])
+        total += detT * partial_total
+
+    return total / (math.sqrt(detQ) * dp2fact)
+
+
 def second_moment(Q, **rangeorlist):
     """
     Computes the second moment of the Voronoi cell defined by the quadratic form Q. TODO
@@ -588,7 +679,7 @@ def second_moment(Q, **rangeorlist):
 
     Usage:
         Q = [[2, -1], [-1, 2]]
-        second_moment(Q, range=2) #Returns 
+        second_moment(Q, range=2) #Returns
     """
     VC = None
     if "range" in rangeorlist:
