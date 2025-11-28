@@ -18,4 +18,3 @@ symMatricesRing = (d) -> (
     );
     return R/I
 );
--- print(symMatricesRing(4));

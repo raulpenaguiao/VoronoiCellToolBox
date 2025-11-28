@@ -10,7 +10,6 @@
 -- Example:
 --   qNormMatrixFormat(matrix{{1,1},{0,1}}, matrix{{2,0},{0,3}}, 2)
 --   -- Output: matrix {{2}, {5}}
-qNormMatrixFormat = (B, Q, d) ->(
+qNormMatrixFormat = (B, Q, d, verbose) ->(
     return transpose( matrix{for i from 0 to d-1 list qnorm(matrix B_i, Q)})
 );
--- print(toString qNormMatrixFormat(matrix{{1,1},{0,1}}, matrix{{2,0},{0,3}}, 2));

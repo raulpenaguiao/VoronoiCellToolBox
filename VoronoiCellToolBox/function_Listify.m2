@@ -1,21 +1,21 @@
--- listifying favorite matrix
--- Listify(d)
+-- listifying a matrix
+-- Listify(matVertices, d)
 -- Input:
---   matVertices: matrix with 
+--   matVertices: square matrix
+--   d: dimension
 -- Output:
---   List of values for symmetric matrix entries: d for diagonal, -1 for off-diagonal
+--   List of values for symmetric matrix entries listed in an n*(n+1)/2 sized list,
+--      values from the diagonal to the right
 -- Description:
---   Produces a list encoding the favorite matrix for use in substitutions.
+--   Produces a list encoding the matrix for use in substitutions.
 -- Example:
---   Listify(2) -- Output: {2, -1, 2}
-Listify = (matVertices) -> (
+--   Listify(matrix{{2, 1}, {1, 3}}, 2) -- Output: {2, 1, 3}
+Listify = (matVertices, d) -> (
     lvalues = {};
     for i from 0 to d-1 do(
         for j from i to d-1 do(
-            if i === j then lvalues = append(lvalues, d)
-            else lvalues = append(lvalues, -1);
+            lvalues = append(lvalues, matVertices_(i,j))
         );
     );
     return lvalues
 );
--- print(toString Listify(2)); -- {2, -1, 2}

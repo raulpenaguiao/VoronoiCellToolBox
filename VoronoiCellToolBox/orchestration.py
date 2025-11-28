@@ -216,7 +216,7 @@ def qNormMatrixFormat_m2(B, Q):
 B = {B_m2};
 Q = {Q_m2};
 d = {d};
-result = qNormMatrixFormat(B, Q, d);
+result = qNormMatrixFormat(B, Q, d, false);
 toString result
 """
 
@@ -310,7 +310,7 @@ def fromRelevantVectorsToVertex_m2(B, Q):
 B = {B_m2};
 Q = {Q_m2};
 d = {d};
-result = fromRelevantVectorsToVertex(B, Q, d);
+result = fromRelevantVectorsToVertex(B, Q, d, false);
 toString result
 """
 
@@ -410,7 +410,7 @@ def VectorizedVertex_m2(listMatrices, Q):
 listMatrices = {list_m2};
 Q = {Q_m2};
 d = {d};
-result = VectorizedVertex(listMatrices, Q, d);
+result = VectorizedVertex(listMatrices, Q, d, false);
 toString result
 """
 
@@ -434,6 +434,10 @@ def isSame_m2(i, j):
     --------
     int : 1 if i == j, else 0
     """
+    # Input validation
+    if not isinstance(i, int) or not isinstance(j, int):
+        raise TypeError("isSame_m2 requires integer arguments")
+
     m2_input_string = load_m2_function_with_dependencies("isSame")
 
     code = f"""
@@ -443,8 +447,11 @@ toString result
 
     m2_input_string += code
     result = macaulay2.eval(m2_input_string)
-    result_str = str(result.splitlines()[-1])
-    return int(result_str)
+    result_str = str(result.splitlines()[-1]).strip()
+    try:
+        return int(result_str)
+    except ValueError:
+        raise ValueError(f"Could not parse M2 output as integer: {result_str}")
 
 
 def favouriteMatrix_m2(d):
@@ -494,7 +501,7 @@ def Listify_m2(matVertices, d):
     code = f"""
 matVertices = {matVertices_m2};
 d = {d};
-result = Listify(matVertices);
+result = Listify(matVertices, d);
 toString result
 """
 
@@ -522,6 +529,16 @@ def makepos_m2(polynom_str, lvalues, d, ring_str):
     --------
     str : The polynomial, possibly with sign flipped to ensure positivity at lvalues
     """
+    # Input validation
+    if not isinstance(polynom_str, str):
+        raise TypeError("polynom_str must be a string")
+    if not isinstance(ring_str, str):
+        raise TypeError("ring_str must be a string")
+    if not isinstance(lvalues, (list, tuple)):
+        raise TypeError("lvalues must be a list or tuple")
+    if not isinstance(d, int):
+        raise TypeError("d must be an integer")
+
     m2_input_string = load_m2_function_with_dependencies("makepos")
 
     # Convert lvalues list to Macaulay2 format

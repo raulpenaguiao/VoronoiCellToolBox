@@ -21,4 +21,3 @@ favouriteMatrix = (d) -> (
     );
     return matrix ans
 );
--- print(toString favouriteMatrix(3)); -- matrix {{3,-1,-1},{-1,3,-1},{-1,-1,3}}

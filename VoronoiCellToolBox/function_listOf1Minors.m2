@@ -16,5 +16,3 @@ listOf1Minors = (A, d) -> (
     L = toList(0..d-1);
     return for i from 0 to d-1 list (for j from 0 to d-1 list det submatrix(A, drop(L, {i, i}), drop(L, {j, j})));
 );
--- R = QQ[a, b, c, d, e, f, g, h, i];
--- print(toString listOf1Minors(matrix{{a, b, c}, {d, e, f}, {g, h, i}}, 3));

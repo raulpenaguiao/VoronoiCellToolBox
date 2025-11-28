@@ -13,5 +13,3 @@ isSame = (i, j) ->(
     if i === j then return 1
     else return 0
 );
--- print(toString isSame(1,1)); -- 1
--- print(toString isSame(1,2)); -- 0

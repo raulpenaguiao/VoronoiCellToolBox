@@ -12,9 +12,6 @@
 -- -- Output: matrix {{1/2}, {1/2}}
 --   toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{q11, q12},{q12,q22}}, 2)
 -- -- Output: matrix {{(-q11*q22+q12*q22)/(2*q12^2-2*q11*q22)}, {(q11*q12-q11*q22)/(2*q12^2-2*q11*q22)}}
-fromRelevantVectorsToVertex = (B, Q, d)->(
-    return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d)
+fromRelevantVectorsToVertex = (B, Q, d, verbose)->(
+    return 1/2*inverseCofactorMatrix(Q, d)*inverse(transpose(B))*qNormMatrixFormat(B, Q, d, verbose)
 );
--- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{2,0},{0,3}}, 2));
--- R = QQ[q11, q12, q22];
--- print(toString fromRelevantVectorsToVertex(matrix{{1,0},{0,1}}, matrix{{q11, q12},{q12,q22}}, 2));

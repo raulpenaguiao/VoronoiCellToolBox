@@ -1,5 +1,4 @@
-
--- it takes a polynomial, a list of values, and flips the sign of the polynomial if 
+-- it takes a polynomial, a list of values, and flips the sign of the polynomial if
 -- in the evaluation in these values it is negative
 -- makepos(polynom, lvalues, d, RingR)
 -- Input:
@@ -19,7 +18,7 @@ makepos = (polynom, lvalues, d, RingR) -> (
     slst = {};
     genList = gens RingR;
     for i from 0 to G-1 do (
-        slst = append(slst, genList_i => lvalues_i); 
+        slst = append(slst, genList_i => lvalues_i);
     );
     subvalue1 = sub(numerator polynom, slst);
     subvalue2 = sub(denominator polynom, slst);

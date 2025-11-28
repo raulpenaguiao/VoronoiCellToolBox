@@ -11,10 +11,10 @@
 --   Computes and concatenates vertices from a list of relevant vector matrices.
 -- Example:
 --   VectorizedVertex({matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}}, matrix{{2,0},{0,3}}, 2)
-VectorizedVertex = (listMatrices, Q, d) -> ( 
-    concatVertices = fromRelevantVectorsToVertex(listMatrices_0, Q, d);
+VectorizedVertex = (listMatrices, Q, d, verbose) -> (
+    concatVertices = fromRelevantVectorsToVertex(listMatrices_0, Q, d, verbose);
     for j from 1 to d do(
-        concatVertices = concatVertices | fromRelevantVectorsToVertex(listMatrices_j, Q, d);
+        concatVertices = concatVertices | fromRelevantVectorsToVertex(listMatrices_j, Q, d, verbose);
     );
     return concatVertices
 );
