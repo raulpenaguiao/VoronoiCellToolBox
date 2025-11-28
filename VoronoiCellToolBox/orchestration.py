@@ -3,6 +3,24 @@ from importlib.resources import files
 from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
 
+# Define function dependencies for proper loading order
+FUNCTION_DEPENDENCIES = {
+    "qnorm": [],
+    "qNormMatrixFormat": ["qnorm"],
+    "listOf1Minors": [],
+    "inverseCofactorMatrix": ["listOf1Minors"],
+    "isSame": [],
+    "favouriteMatrix": ["isSame"],
+    "fromRelevantVectorsToVertex": ["inverseCofactorMatrix", "qNormMatrixFormat", "qnorm"],
+    "barycentre": [],
+    "Listify": [],
+    "secondMoment": ["qnorm", "barycentre"],
+    "VectorizedVertex": ["fromRelevantVectorsToVertex"],
+    "makepos": [],
+    "SmPoly": ["VectorizedVertex", "secondMoment", "Listify", "makepos"],
+    "symMatricesRing": [],
+}
+
 def load_m2_template(template_name="templatecomputation.m2"):
     """
     Load the templatecomputation.m2 file from your package
@@ -11,48 +29,84 @@ def load_m2_template(template_name="templatecomputation.m2"):
         template_content = files("VoronoiCellToolBox") \
             .joinpath(template_name) \
             .read_text()
-        
+
         return template_content
     except Exception as e:
         print(f"Error loading resource: {e}")
         raise FileNotFoundError(f"Could not find {template_name} in package")
 
 
+def load_m2_function_with_dependencies(function_name):
+    """
+    Load a specific M2 function file along with all its dependencies in the correct order.
+
+    Parameters:
+    -----------
+    function_name : str
+        Name of the function to load (e.g., "barycentre", "SmPoly")
+
+    Returns:
+    --------
+    str : Combined M2 code with the function and all its dependencies
+    """
+    if function_name not in FUNCTION_DEPENDENCIES:
+        raise ValueError(f"Unknown function: {function_name}")
+
+    # Use a set to track already loaded functions (avoid duplicates)
+    loaded = set()
+    code_parts = []
+
+    def load_recursive(func_name):
+        if func_name in loaded:
+            return
+        loaded.add(func_name)
+
+        # Load dependencies first
+        for dep in FUNCTION_DEPENDENCIES.get(func_name, []):
+            load_recursive(dep)
+
+        # Then load this function
+        try:
+            file_name = f"function_{func_name}.m2"
+            func_content = load_m2_template(file_name)
+            code_parts.append(func_content)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Could not find {file_name} for function {func_name}")
+
+    load_recursive(function_name)
+    return "\n".join(code_parts)
+
+
 def barycentre(V, verbose=False):
     """
     Uses macaulay2 to compute the barycentre of a collection of vectors.
-    
+
     Parameters:
     -----------
     V : a list of vectors
-        
+
     Returns:
     --------
     A vector representing the barycentre of the list of vectors V.
     """
-    #print("\nEntering barycentre function")
     # Step 1: Parse input vectors into Macaulay2 format
-    Vmatrix = [[V[i][j] for j in range(len(V[0]))] for i in range(len(V))]#We don't assume V is a matrix
+    Vmatrix = [[V[i][j] for j in range(len(V[0]))] for i in range(len(V))]
     string_vectors = "matrix " + str(Vmatrix).replace("]", "}").replace("[", "{")
 
-    # Step 2: Prepare Macaulay2 input file
-    m2_input_string = load_m2_template("function_barycentre.m2")
+    # Step 2: Load barycentre function (no dependencies)
+    m2_input_string = load_m2_function_with_dependencies("barycentre")
 
-    #Step 3: Add the code to compute barycentre
+    # Step 3: Add the code to compute barycentre
     barycentreCode = """
 toString barycentre({{VECTORS}}, {{DIMENSION}})
     """.replace("{{VECTORS}}", string_vectors) \
-       .replace("{{DIMENSION}}", str(len(V))) \
-       .replace("{{VERBOSE}}", "true" if verbose else "false")
-    
-    #print("Debug 3: m2_input_string = " + m2_input_string)
-    #print("Debug 4: barycentreCode = " + barycentreCode)
+       .replace("{{DIMENSION}}", str(len(V)))
 
-    #Step 4: Run Macaulay2
+    # Step 4: Run Macaulay2
     result = macaulay2.eval(m2_input_string + barycentreCode)
 
-    #Step 5: Parse output back into Sage vector
-    result = result.splitlines()[-1]  # get only the last line
+    # Step 5: Parse output back into Sage vector
+    result = result.splitlines()[-1]
     result = result.replace("matrix {{", "").replace("}}", "")
     result = [[eval(str(x))] for x in result.split("}, {")]
 
@@ -74,12 +128,9 @@ def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
     # Step 1: Run Sage computation
     sage_string = FormatPullingTrigMatrix(Q)
     matrix_m2 = macaulifyMatrix(Q)
-    #if(verbose):
-    #    print("Debug 1: matrix_m2 = " + matrix_m2)
-    
-    # Step 2: Prepare Macaulay2 input file
-    m2_input_string = load_m2_template()
-    #print("Debug 2: m2_input_string = " + m2_input_string)
+
+    # Step 2: Load SmPoly function with all its dependencies
+    m2_input_string = load_m2_function_with_dependencies("SmPoly")
 
     secondMomentCode = """
 mat = {{SAGESTRING}};
@@ -89,20 +140,20 @@ Zpoly = SmPoly(d, mat, metric_matrix, {{VERBOSE}});
 toString Zpoly
 """
 
-    #parse m2 for this function
+    # Parse m2 for this function
     m2_input_string += secondMomentCode
     m2_input_string = m2_input_string.replace("{{SAGESTRING}};", sage_string.replace("\n", "") + ";")
-    m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2 )
-    if( verbose ):
+    m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2)
+    if verbose:
         m2_input_string = m2_input_string.replace("{{VERBOSE}}", "true")
     else:
         m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
-    #print("Debug 3: m2_input_string = " + m2_input_string)
+
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
-    if( verbose ):
+    if verbose:
         print("Debug 4: result = " + str(result))
-    result = str(result.splitlines()[-1]) 
+    result = str(result.splitlines()[-1])
     if '=' in result:
         result = result.split('=')[1].strip()
     return result  # return only the last line which contains the polynomial
@@ -126,7 +177,7 @@ def qnorm_m2(v, Q):
     v_m2 = macaulifyMatrix([[vi] for vi in v])
     Q_m2 = macaulifyMatrix(Q)
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("qnorm")
 
     code = f"""
 v = {v_m2};
@@ -159,7 +210,7 @@ def qNormMatrixFormat_m2(B, Q):
     B_m2 = macaulifyMatrix(B)
     Q_m2 = macaulifyMatrix(Q)
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("qNormMatrixFormat")
 
     code = f"""
 B = {B_m2};
@@ -190,7 +241,7 @@ def listOf1Minors_m2(A):
     d = len(A)
     A_m2 = macaulifyMatrix(A)
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("listOf1Minors")
 
     code = f"""
 A = {A_m2};
@@ -220,7 +271,7 @@ def inverseCofactorMatrix_m2(A):
     d = len(A)
     A_m2 = macaulifyMatrix(A)
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("inverseCofactorMatrix")
 
     code = f"""
 A = {A_m2};
@@ -253,7 +304,7 @@ def fromRelevantVectorsToVertex_m2(B, Q):
     B_m2 = macaulifyMatrix(B)
     Q_m2 = macaulifyMatrix(Q)
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("fromRelevantVectorsToVertex")
 
     code = f"""
 B = {B_m2};
@@ -284,7 +335,7 @@ def barycentre_m2(L):
     d = len(L[0]) - 1  # d is number of columns minus 1
     L_m2 = macaulifyMatrix(L)
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("barycentre")
 
     code = f"""
 L = {L_m2};
@@ -317,7 +368,7 @@ def secondMoment_m2(L, Q):
     L_m2 = macaulifyMatrix(L)
     Q_m2 = macaulifyMatrix(Q)
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("secondMoment")
 
     code = f"""
 L = {L_m2};
@@ -353,13 +404,160 @@ def VectorizedVertex_m2(listMatrices, Q):
     # Convert list of matrices to Macaulay2 format
     list_m2 = "{" + ", ".join([macaulifyMatrix(mat) for mat in listMatrices]) + "}"
 
-    m2_input_string = load_m2_template()
+    m2_input_string = load_m2_function_with_dependencies("VectorizedVertex")
 
     code = f"""
 listMatrices = {list_m2};
 Q = {Q_m2};
 d = {d};
 result = VectorizedVertex(listMatrices, Q, d);
+toString result
+"""
+
+    m2_input_string += code
+    result = macaulay2.eval(m2_input_string)
+    return str(result.splitlines()[-1])
+
+
+def isSame_m2(i, j):
+    """
+    Check if two indices are the same using Macaulay2.
+
+    Parameters:
+    -----------
+    i : int
+        First index
+    j : int
+        Second index
+
+    Returns:
+    --------
+    int : 1 if i == j, else 0
+    """
+    m2_input_string = load_m2_function_with_dependencies("isSame")
+
+    code = f"""
+result = isSame({i}, {j});
+toString result
+"""
+
+    m2_input_string += code
+    result = macaulay2.eval(m2_input_string)
+    result_str = str(result.splitlines()[-1])
+    return int(result_str)
+
+
+def favouriteMatrix_m2(d):
+    """
+    Compute the favorite matrix for Voronoi cell computations using Macaulay2.
+
+    Parameters:
+    -----------
+    d : int
+        Dimension
+
+    Returns:
+    --------
+    str : The favorite matrix with d on diagonal and -1 elsewhere
+    """
+    m2_input_string = load_m2_function_with_dependencies("favouriteMatrix")
+
+    code = f"""
+result = favouriteMatrix({d});
+toString result
+"""
+
+    m2_input_string += code
+    result = macaulay2.eval(m2_input_string)
+    return str(result.splitlines()[-1])
+
+
+def Listify_m2(matVertices, d):
+    """
+    Encode a symmetric matrix into a list of values using Macaulay2.
+
+    Parameters:
+    -----------
+    matVertices : matrix
+        A symmetric matrix to encode
+    d : int
+        Dimension
+
+    Returns:
+    --------
+    str : List representation of symmetric matrix entries
+    """
+    matVertices_m2 = macaulifyMatrix(matVertices)
+
+    m2_input_string = load_m2_function_with_dependencies("Listify")
+
+    code = f"""
+matVertices = {matVertices_m2};
+d = {d};
+result = Listify(matVertices);
+toString result
+"""
+
+    m2_input_string += code
+    result = macaulay2.eval(m2_input_string)
+    return str(result.splitlines()[-1])
+
+
+def makepos_m2(polynom_str, lvalues, d, ring_str):
+    """
+    Adjust polynomial sign to ensure positivity at given values using Macaulay2.
+
+    Parameters:
+    -----------
+    polynom_str : str
+        Polynomial expression as a string (e.g., "q_0 + q_1")
+    lvalues : list
+        List of values for substitution
+    d : int
+        Dimension
+    ring_str : str
+        Polynomial ring definition as a string (e.g., "QQ[q_0, q_1]")
+
+    Returns:
+    --------
+    str : The polynomial, possibly with sign flipped to ensure positivity at lvalues
+    """
+    m2_input_string = load_m2_function_with_dependencies("makepos")
+
+    # Convert lvalues list to Macaulay2 format
+    lvalues_str = "{" + ", ".join(str(v) for v in lvalues) + "}"
+
+    code = f"""
+R = {ring_str};
+polynom = {polynom_str};
+lvalues = {lvalues_str};
+d = {d};
+result = makepos(polynom, lvalues, d, R);
+toString result
+"""
+
+    m2_input_string += code
+    result = macaulay2.eval(m2_input_string)
+    return str(result.splitlines()[-1])
+
+
+def symMatricesRing_m2(d):
+    """
+    Create a polynomial ring for symmetric d x d matrices using Macaulay2.
+
+    Parameters:
+    -----------
+    d : int
+        Dimension
+
+    Returns:
+    --------
+    str : String representation of the symmetric matrix ring with symmetry relations
+    """
+    m2_input_string = load_m2_function_with_dependencies("symMatricesRing")
+
+    code = f"""
+result = symMatricesRing({d});
 toString result
 """
 
