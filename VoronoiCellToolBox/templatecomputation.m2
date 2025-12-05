@@ -326,13 +326,13 @@ SmPoly = (d, matVertices, A, verbose) -> (
     for i from 0 to l-1 do(
         if(verbose) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
         concatVertices = VectorizedVertex(matVertices_i, Q, d, verbose);
-        if(verbose) then print(toString concatVertices) else null;
-        if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
+        -- if(verbose) then print(toString concatVertices) else null;
+        -- if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop compute secondMoment")) else null;
         ply = secondMoment(concatVertices, d, Q);
-        if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;
+        -- if(verbose) then print(concatenate("l values = ", toString lvalues)) else null;
         newPolyTriangle = makepos(ply, lvalues, d, R);
         if(verbose) then print(concatenate("newPolyTriangle = ", toString newPolyTriangle)) else null;
-        if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
+        -- if(verbose) then print(concatenate(toString i, " of total ", toString l, " - loop add ")) else null;
         Zpoly = Zpoly + newPolyTriangle;
     );
     return Zpoly
