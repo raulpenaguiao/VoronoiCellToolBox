@@ -8,16 +8,6 @@ EXAMPLES::
 TODO examples
 """
 
-# ****************************************************************************
-#                           Copyright (C)
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 2 of the License, or
-# (at your option) any later version.
-#                  https://www.gnu.org/licenses/
-# ****************************************************************************
-
 import math
 import numpy
 import itertools
@@ -578,7 +568,7 @@ def Delset(Q, v, **rangeorlist):
 def VertexFromRelevantVectors(B, Q):
     """
     Computes the vertex coordinates from a matrix of relevant vectors using the formula:
-    \vec{v} = \frac{1}{2} Q^{-1}(B^T)^{-1}b_Q
+    $\vec{v} = \frac{1}{2} Q^{-1}(B^T)^{-1}b_Q$
 
     where b_Q is a vector whose i-th component is the Q-norm of the i-th column of B.
 
@@ -600,15 +590,24 @@ def VertexFromRelevantVectors(B, Q):
 
     # Compute b_Q: Q-norms of each column of B
     b_Q = vector([Qform(B_matrix.column(i), Q_matrix) for i in range(d)])
+    
+    print("Q = ", Q_matrix)
+    print("B = ", B_matrix)
+    print("b_Q = ", b_Q)
 
     # Compute (B^T)^{-1} * b_Q
     B_T_inv = B_matrix.transpose().inverse()
     intermediate = B_T_inv * b_Q
 
+    print("Intermediate = ", intermediate)
+    print("(B^T)^{-1} = ", B_T_inv)
+
     # Compute Q^{-1} * intermediate
     Q_inv = Q_matrix.inverse()
     result = (Rational(1, 2)) * Q_inv * intermediate
-
+    print("Q^{-1} = ", Q_inv)
+    print("Result = ", result)
+    
     return result
 
 
