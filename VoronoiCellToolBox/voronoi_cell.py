@@ -589,7 +589,7 @@ def VertexFromRelevantVectors(B, Q):
     B_matrix = Matrix(B)
 
     # Compute b_Q: Q-norms of each column of B
-    b_Q = vector([Qform(B_matrix.column(i), Q_matrix) for i in range(d)])
+    b_Q = Matrix([[Qform(B_matrix.column(i), Q_matrix)] for i in range(d)])
     
     print("Q = ", Q_matrix)
     print("B = ", B_matrix)
@@ -604,10 +604,10 @@ def VertexFromRelevantVectors(B, Q):
 
     # Compute Q^{-1} * intermediate
     Q_inv = Q_matrix.inverse()
-    result = (Rational(1, 2)) * Q_inv * intermediate
+    result = Q_inv * intermediate
     print("Q^{-1} = ", Q_inv)
     print("Result = ", result)
-    
+    result = Rational(1, 2) * result
     return result
 
 
