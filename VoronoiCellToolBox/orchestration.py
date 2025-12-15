@@ -161,7 +161,7 @@ toString Zpoly
 
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
-    if verboseComputationProgress:
+    if verboseComputationProgress or verboseSecondMoments or verboseVertecExpressions:
         print("Debug 4: result = " + str(result))
     result = str(result.splitlines()[-1])
     if '=' in result:
