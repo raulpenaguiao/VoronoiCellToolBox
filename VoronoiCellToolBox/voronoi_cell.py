@@ -598,7 +598,7 @@ def VertexFromRelevantVectors(B, Q):
     # Compute Q^{-1} * intermediate
     Q_inv = Q_matrix.inverse()
     result = Q_inv * intermediate
-    return Matrix([ [result[i,0]/2] for i in range(d)])
+    return vector( [result[i,0]/2 for i in range(d)] )
 
 
 def secondMomentMatrix(Q, **rangeorlist):
