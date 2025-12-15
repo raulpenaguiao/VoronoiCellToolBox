@@ -435,10 +435,7 @@ def isSame_m2(i, j):
     int : 1 if i == j, else 0
     """
     # Input validation
-    # Maybe only check if the inputs can be converted to int
-    if 
-    if not isinstance(i, Integer) or not isinstance(j, Integer):
-        raise TypeError("isSame_m2 requires integer arguments")
+    # TODO
 
     m2_input_string = load_m2_function_with_dependencies("isSame")
 
