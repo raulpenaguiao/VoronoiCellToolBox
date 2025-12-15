@@ -112,7 +112,7 @@ toString barycentre({{VECTORS}}, {{DIMENSION}})
 
     return result
 
-def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
+def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertecExpressions=False):
     """
     Execute a Sage computation and pass results to Macaulay2.
 
@@ -136,7 +136,7 @@ def normalizedChamberSecondMomentPolynomial(Q, verbose=False):
 mat = {{SAGESTRING}};
 metric_matrix = {{SAGESTRING2}};
 d = numrows (mat_0)_0;
-Zpoly = SmPoly(d, mat, metric_matrix, {{VERBOSE}});
+Zpoly = SmPoly(d, mat, metric_matrix, {{verboseComputationProgress}}, {{verboseSecondMoments}}, {{verboseVertecExpressions}});
 toString Zpoly
 """
 
@@ -144,14 +144,24 @@ toString Zpoly
     m2_input_string += secondMomentCode
     m2_input_string = m2_input_string.replace("{{SAGESTRING}};", sage_string.replace("\n", "") + ";")
     m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2)
-    if verbose:
-        m2_input_string = m2_input_string.replace("{{VERBOSE}}", "true")
+    if verboseComputationProgress:
+        m2_input_string = m2_input_string.replace("{{verboseComputationProgress}}", "true")
     else:
-        m2_input_string = m2_input_string.replace("{{VERBOSE}}", "false")
+        m2_input_string = m2_input_string.replace("{{verboseComputationProgress}}", "false")
+
+    if verboseSecondMoments:
+        m2_input_string = m2_input_string.replace("{{verboseSecondMoments}}", "true")
+    else:
+        m2_input_string = m2_input_string.replace("{{verboseSecondMoments}}", "false")
+
+    if verboseVertecExpressions:
+        m2_input_string = m2_input_string.replace("{{verboseVertecExpressions}}", "true")
+    else:
+        m2_input_string = m2_input_string.replace("{{verboseVertecExpressions}}", "false")
 
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
-    if verbose:
+    if verboseComputationProgress:
         print("Debug 4: result = " + str(result))
     result = str(result.splitlines()[-1])
     if '=' in result:
