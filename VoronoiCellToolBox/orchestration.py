@@ -172,8 +172,8 @@ def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False,
         secondMoment = []
         for i, line in enumerate(lines):
             if "newPolyTriangle = " in line and i + 1 < len(lines):
-                secondMoment.append(f' smtriang{i} = "' + lines[i + 1] + '"')
-                secondMoment.append(f'print(rpl(smtriang{i}, {Q}))')
+                secondMoment.append(f' sm{i} = "' + lines[i + 1] + '"')
+                secondMoment.append(f'print(rpl(sm{i}, {Q}))')
         print("Debug second moment expressions: \n " + "\n".join(secondMoment))
     elif verboseVertex:
         #find all instances of "concatVertices = " and print the line after it
@@ -182,7 +182,7 @@ def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False,
         for i, line in enumerate(lines):
             if "concatVertices = " in line and i + 1 < len(lines):
                 vertexCoordinates.append(f' smtriang{i} = "' + lines[i + 1] + '"')
-                vertexCoordinates.append(f'print(rpl(smtriang{i}, {Q}))')
+                vertexCoordinates.append(f'print(rpl(m2_matrix_to_sage(smtriang{i}), {Q}))')
         print("Debug vertex expressions: \n " + "\n".join(vertexCoordinates))
     if '=' in result:
         result = result.split('=')[-1].strip()
