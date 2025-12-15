@@ -591,14 +591,14 @@ def VertexFromRelevantVectors(B, Q, verbose = False):
     # Compute b_Q: Q-norms of each column of B
     b_Q = Matrix([[Qform(B_matrix.column(i), Q_matrix)] for i in range(d)])
     if verbose:
-        print(f"b_Q = {b_Q}")
+        print(f"b_Q = \n{b_Q}")
 
     # Compute (B^T)^{-1} * b_Q
     B_T_inv = B_matrix.transpose().inverse()
     intermediate = B_T_inv * b_Q
     if verbose:
-        print(f"intermediate = {intermediate}")
-        print(f" B transpose inverse = {B_T_inv}")
+        print(f" B transpose inverse = \n{B_T_inv}")
+        print(f"intermediate = bt inv * bq \n{intermediate}")
 
     # Compute Q^{-1} * intermediate
     Q_inv = Q_matrix.inverse()
@@ -611,7 +611,7 @@ def VertexFromRelevantVectors(B, Q, verbose = False):
     return vector( [result[i,0]/2 for i in range(d)] )
 
 
-def secondMomentMatrix(Q, **rangeorlist):
+def secondMomentMatrix(Q, verbose = True, **rangeorlist):
     """
     Computes the second moment of the Voronoi cell defined by the quadratic form Q,
     in the inherited metric given by Q.
@@ -643,6 +643,9 @@ def secondMomentMatrix(Q, **rangeorlist):
         raise Exception("A range or list of potential relevant vectors needs to be given.")
 
     pt = pulling_triangulation(VC)
+    if verbose:
+        for index, triangle in enumerate(pt):
+            print(f"triangles[{index}] = {triangle}")
     total = 0
     d = len(Q)
     detQ = numpy.linalg.det(numpy.array(Q))
@@ -661,6 +664,8 @@ def secondMomentMatrix(Q, **rangeorlist):
         # Compute the second moment contribution: det(T) / (sqrt(det Q) * (d+2)!) * (||(d+1)*s||_Q^2 + sum ||v_i||_Q^2)
         partial_total = Qform((d+1)*s_hat, Q) + sum([Qform(v, Q) for v in triangle])
         total += detT * partial_total
+        if verbose:
+            print(f"partial_total = {partial_total}")
 
     return total / (math.sqrt(detQ) * dp2fact)
 
