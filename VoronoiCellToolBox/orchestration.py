@@ -169,8 +169,20 @@ def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False,
         print("Debug computation progress: result = " + str(result))
     elif verboseSecondMoments:
         print("Debug second moments: result = " + str(result))
+        lines = result.splitlines()
+        secondMoment = []
+        for i, line in enumerate(lines):
+            if "newPolyTriangle = " in line and i + 1 < len(lines):
+                secondMoment.append(lines[i + 1])
+        print("Debug second moment expressions: \n " + "\n".join(secondMoment))
     elif verboseVertex:
-        print("Debug vertex expressions: result = " + str(result))
+        #find all instances of "concatVertices = " and print the line after it
+        lines = result.splitlines()
+        vertexCoordinates = []
+        for i, line in enumerate(lines):
+            if "concatVertices = " in line and i + 1 < len(lines):
+                vertexCoordinates.append(lines[i + 1])
+        print("Debug vertex expressions: \n " + "\n".join(vertexCoordinates))
     if '=' in result:
         result = result.split('=')[-1].strip()
     return result  # return only the last line which contains the polynomial
