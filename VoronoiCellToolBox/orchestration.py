@@ -112,7 +112,7 @@ toString barycentre({{VECTORS}}, {{DIMENSION}})
 
     return result
 
-def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertecExpressions=False):
+def normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False):
     """
     Execute a Sage computation and pass results to Macaulay2.
 
@@ -122,8 +122,7 @@ def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False,
 
     Returns:
     --------
-    the string displaying the polynomial of the second moment of the Voronoi cell
-    for any matrix P in the same secondary cone as Q.
+    the polynomial string with logs and debug info
     """
     # Step 1: Run Sage computation
     sage_string = FormatPullingTrigMatrix(Q)
@@ -154,19 +153,28 @@ toString Zpoly
     else:
         m2_input_string = m2_input_string.replace("{{verboseSecondMoments}}", "false")
 
-    if verboseVertecExpressions:
+    if verboseVertex:
         m2_input_string = m2_input_string.replace("{{verboseVertecExpressions}}", "true")
     else:
         m2_input_string = m2_input_string.replace("{{verboseVertecExpressions}}", "false")
 
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
-    if verboseComputationProgress or verboseSecondMoments or verboseVertecExpressions:
-        print("Debug 4: result = " + str(result))
-    result = str(result.splitlines()[-1])
-    if '=' in result:
-        result = result.split('=')[1].strip()
     return result  # return only the last line which contains the polynomial
+
+
+def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False):
+    result = normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex)
+    if verboseComputationProgress:
+        print("Debug computation progress: result = " + str(result))
+    elif verboseSecondMoments:
+        print("Debug second moments: result = " + str(result))
+    elif verboseVertex:
+        print("Debug vertex expressions: result = " + str(result))
+    if '=' in result:
+        result = result.split('=')[-1].strip()
+    return result  # return only the last line which contains the polynomial
+
 
 
 def qnorm_m2(v, Q):
