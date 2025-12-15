@@ -565,7 +565,7 @@ def Delset(Q, v, **rangeorlist):
     return delset
 
 
-def VertexFromRelevantVectors(B, Q):
+def VertexFromRelevantVectors(B, Q, verbose = False):
     """
     Computes the vertex coordinates from a matrix of relevant vectors using the formula:
     $\vec{v} = \frac{1}{2} Q^{-1}(B^T)^{-1}b_Q$
@@ -590,14 +590,24 @@ def VertexFromRelevantVectors(B, Q):
 
     # Compute b_Q: Q-norms of each column of B
     b_Q = Matrix([[Qform(B_matrix.column(i), Q_matrix)] for i in range(d)])
-    
+    if verbose:
+        print(f"b_Q = {b_Q}")
+
     # Compute (B^T)^{-1} * b_Q
     B_T_inv = B_matrix.transpose().inverse()
     intermediate = B_T_inv * b_Q
+    if verbose:
+        print(f"intermediate = {intermediate}")
+        print(f" B transpose inverse = {B_T_inv}")
 
     # Compute Q^{-1} * intermediate
     Q_inv = Q_matrix.inverse()
     result = Q_inv * intermediate
+    if verbose:
+        print(f" Q inverse = {Q_inv}")
+        print(f"result before scaling = {result}")
+        print(f"result after scaling = {[result[i,0]/2 for i in range(d)]}")
+
     return vector( [result[i,0]/2 for i in range(d)] )
 
 
