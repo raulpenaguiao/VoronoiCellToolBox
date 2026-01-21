@@ -160,9 +160,7 @@ toString Zpoly
 
     # Step 3: Run Macaulay2
     result = macaulay2.eval(m2_input_string)
-    print(result)
     result = result.split('\n')[-1].strip()
-    print(result)
     return result  # return only the last line which contains the polynomial
 
 
