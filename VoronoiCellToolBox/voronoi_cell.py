@@ -611,7 +611,7 @@ def VertexFromRelevantVectors(B, Q, verbose = False):
     return vector( [result[i,0]/2 for i in range(d)] )
 
 
-def secondMomentMatrix(Q, verbose = False, **rangeorlist):
+def smMatrixSimplex(Q, verbose = False, **rangeorlist):
     """
     Computes the second moment of the Voronoi cell defined by the quadratic form Q,
     in the inherited metric given by Q.
@@ -630,7 +630,7 @@ def secondMomentMatrix(Q, verbose = False, **rangeorlist):
 
     Usage:
         Q = [[2, -1], [-1, 2]]
-        secondMomentMatrix(Q, range=2)
+        smMatrixSimplex(Q, range=2)
     """
     VC = None
     if "range" in rangeorlist:
