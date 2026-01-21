@@ -48,7 +48,7 @@ def VCell(Q, **rangeorlist):
       introduce floating-point inaccuracies for very large or very small values.
     """
     if numpy.linalg.det(numpy.array(Q)) <=0: 
-        raise Exception("your matrix is not positive-definite.")
+        raise Exception(f"Matrix {Q} is not positive-definite.")
         return "your matrix is not positive-definite."
     if (numpy.array(Q).transpose() != numpy.array(Q)).any():
         raise Exception("your matrix is not symmetric.")
