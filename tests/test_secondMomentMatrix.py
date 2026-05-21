@@ -6,7 +6,7 @@ import unittest
 from sage.all import Matrix, QQ, vector, Rational
 from VoronoiCellToolBox.voronoi_cell import (
     VertexFromRelevantVectors,
-    secondMomentMatrix,
+    second_moment,
     Qform,
     VCell
 )
@@ -24,7 +24,7 @@ class TestVertexFromRelevantVectors(unittest.TestCase):
         # For identity metric and identity B, the result should be [1/2, 1/2]
         # b_Q = [1, 1], (B^T)^{-1} = I, Q^{-1} = I
         # v = 1/2 * I * [1, 1] = [1/2, 1/2]
-        expected = vector([Rational(1, 2), Rational(1, 2)])
+        expected = vector([QQ('1/2'), QQ('1/2')])
 
         self.assertEqual(len(result), 2)
         self.assertAlmostEqual(float(result[0]), float(expected[0]), places=5)
@@ -51,10 +51,10 @@ class TestVertexFromRelevantVectors(unittest.TestCase):
         B = [[1, 0], [0, 1]]
         result = VertexFromRelevantVectors(B, Q)
 
-        # b_Q = [1, 1] (Q-norms of unit vectors)
+        # b_Q = [2, 3] (Q-norms: Qform(e_1, Q)=2, Qform(e_2, Q)=3)
         # (B^T)^{-1} = I, Q^{-1} = diag(1/2, 1/3)
-        # v = 1/2 * diag(1/2, 1/3) * [1, 1] = [1/4, 1/6]
-        expected = vector([Rational(1, 4), Rational(1, 6)])
+        # v = 1/2 * diag(1/2, 1/3) * [2, 3] = [1/2, 1/2]
+        expected = vector([QQ('1/2'), QQ('1/2')])
 
         self.assertEqual(len(result), 2)
         self.assertAlmostEqual(float(result[0]), float(expected[0]), places=5)
@@ -85,12 +85,12 @@ class TestVertexFromRelevantVectors(unittest.TestCase):
 
 
 class TestSecondMomentMatrix(unittest.TestCase):
-    """Test suite for secondMomentMatrix function"""
+    """Test suite for second_moment function"""
 
     def test_basic_computation(self):
         """Test basic second moment computation"""
         Q = [[2, -1], [-1, 2]]
-        result = secondMomentMatrix(Q, range=2)
+        result = second_moment(Q, range=2)
 
         # Verify the result is a positive number
         self.assertIsInstance(result, (int, float))
@@ -99,7 +99,7 @@ class TestSecondMomentMatrix(unittest.TestCase):
     def test_identity_metric(self):
         """Test second moment with identity metric"""
         Q = [[1, 0], [0, 1]]
-        result = secondMomentMatrix(Q, range=2)
+        result = second_moment(Q, range=2)
 
         # For identity metric, the second moment should be positive
         self.assertGreater(result, 0)
@@ -110,7 +110,7 @@ class TestSecondMomentMatrix(unittest.TestCase):
 
         # Compute with range=1 (may not include all relevant vectors)
         # and range=2 (more complete)
-        result_range2 = secondMomentMatrix(Q, range=2)
+        result_range2 = second_moment(Q, range=2)
 
         # Verify the result is positive
         self.assertGreater(result_range2, 0)
@@ -118,7 +118,7 @@ class TestSecondMomentMatrix(unittest.TestCase):
     def test_3d_metric(self):
         """Test second moment computation for 3D metric"""
         Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
-        result = secondMomentMatrix(Q, range=2)
+        result = second_moment(Q, range=2)
 
         # Verify the result is positive
         self.assertGreater(result, 0)
@@ -126,12 +126,12 @@ class TestSecondMomentMatrix(unittest.TestCase):
     def test_scalar_multiple_property(self):
         """Test that scaling the metric properly scales the second moment"""
         Q = [[2, -1], [-1, 2]]
-        result1 = secondMomentMatrix(Q, range=2)
+        result1 = second_moment(Q, range=2)
 
         # Scale the metric by a factor c (in 2D, second moment scales by c)
         c = 2
         Q_scaled = [[c * Q[i][j] for j in range(len(Q[0]))] for i in range(len(Q))]
-        result_scaled = secondMomentMatrix(Q_scaled, range=2)
+        result_scaled = second_moment(Q_scaled, range=2)
 
         # Due to the formula, scaling Q by c in d dimensions affects the result
         # We verify the results have the expected relationship
@@ -143,8 +143,8 @@ class TestSecondMomentMatrix(unittest.TestCase):
         Q1 = [[2, 0], [0, 2]]  # det(Q1) = 4
         Q2 = [[1, 0], [0, 1]]  # det(Q2) = 1
 
-        result1 = secondMomentMatrix(Q1, range=2)
-        result2 = secondMomentMatrix(Q2, range=2)
+        result1 = second_moment(Q1, range=2)
+        result2 = second_moment(Q2, range=2)
 
         # Both results should be positive
         self.assertGreater(result1, 0)
@@ -152,10 +152,10 @@ class TestSecondMomentMatrix(unittest.TestCase):
 
 
 class TestSecondMomentMatrixWithVertexFromRelevantVectors(unittest.TestCase):
-    """Integration tests for secondMomentMatrix and VertexFromRelevantVectors"""
+    """Integration tests for second_moment and VertexFromRelevantVectors"""
 
     def test_integration_2d(self):
-        """Test that VertexFromRelevantVectors works with secondMomentMatrix pipeline"""
+        """Test that VertexFromRelevantVectors works with second_moment pipeline"""
         Q = [[2, -1], [-1, 2]]
 
         # Get a Voronoi cell and check vertices
@@ -167,7 +167,7 @@ class TestSecondMomentMatrixWithVertexFromRelevantVectors(unittest.TestCase):
         self.assertGreater(len(vertices), 0)
 
         # The second moment computation should work without errors
-        sm = secondMomentMatrix(Q, range=2)
+        sm = second_moment(Q, range=2)
         self.assertGreater(sm, 0)
 
     def test_integration_3d(self):
@@ -184,7 +184,7 @@ class TestSecondMomentMatrixWithVertexFromRelevantVectors(unittest.TestCase):
             self.assertGreater(float(vertex[i]), 0)
 
         # Test second moment computation
-        sm = secondMomentMatrix(Q, range=2)
+        sm = second_moment(Q, range=2)
         self.assertGreater(sm, 0)
 
 
