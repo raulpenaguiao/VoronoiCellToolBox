@@ -606,7 +606,7 @@ def symMatricesRing_m2(d):
 
     code = f"""
 result = symMatricesRing({d});
-toString result
+toExternalString result
 """
 
     m2_input_string += code
