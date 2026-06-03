@@ -23,7 +23,7 @@ With a command like
 
 it is still possible to build the module. You will just have to make sure
 that in Sagemath, the variable `sys.path` contains a path that allows the built
-`riemann_theta` directory to be found. The `PYTHONPATH` environment variable
+`VoronoiCellToolBox` directory to be found. The `PYTHONPATH` environment variable
 may be useful for this. One can also install the package as a "user" package
 by executing
 
