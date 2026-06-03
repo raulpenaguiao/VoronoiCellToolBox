@@ -1,5 +1,6 @@
 import subprocess
 from importlib.resources import files
+from numbers import Integral as numbersIntegral
 from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
 
@@ -567,7 +568,7 @@ def makepos_m2(polynom_str, lvalues, d, ring_str):
         raise TypeError("ring_str must be a string")
     if not isinstance(lvalues, (list, tuple)):
         raise TypeError("lvalues must be a list or tuple")
-    if not isinstance(d, int):
+    if not isinstance(d, numbersIntegral):
         raise TypeError("d must be an integer")
 
     m2_input_string = load_m2_function_with_dependencies("makepos")
