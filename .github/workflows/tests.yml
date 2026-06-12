@@ -16,6 +16,7 @@ jobs:
 
       - name: Install Macaulay2
         run: |
+          apt-get update
           apt-get install -y curl wget
           LATEST=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
           VERSION=${LATEST#release-}
