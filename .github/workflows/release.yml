@@ -19,19 +19,20 @@ jobs:
         run: |
           apt-get update
           apt-get install -y curl wget
-          LATEST=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
-          VERSION=${LATEST#release-}
-          UBUNTU=$(lsb_release -rs)
-          URL=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest \
-            | grep browser_download_url \
-            | grep "ubuntu.*${UBUNTU}.*\.deb" \
+          RELEASE=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest)
+          echo "Available assets:"
+          echo "$RELEASE" | grep browser_download_url | cut -d'"' -f4
+          UBUNTU_VER=$(. /etc/os-release && echo "$VERSION_ID")
+          UBUNTU_NAME=$(. /etc/os-release && echo "$UBUNTU_CODENAME")
+          URL=$(echo "$RELEASE" | grep browser_download_url \
+            | grep -i "ubuntu.*\(${UBUNTU_VER}\|${UBUNTU_NAME}\).*\.deb" \
             | cut -d'"' -f4 | head -1)
           if [ -z "$URL" ]; then
-            URL=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest \
-              | grep browser_download_url \
-              | grep "ubuntu.*22\.04.*\.deb" \
+            URL=$(echo "$RELEASE" | grep browser_download_url \
+              | grep -i "ubuntu.*\(22\.04\|jammy\).*\.deb" \
               | cut -d'"' -f4 | head -1)
           fi
+          echo "Downloading: $URL"
           wget -q "$URL" -O m2.deb
           apt-get install -y ./m2.deb
 
