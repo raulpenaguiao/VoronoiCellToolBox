@@ -80,4 +80,4 @@ class TestVectorizedVertex(unittest.TestCase):
         result = VectorizedVertex_m2([], Q)
         # Empty input -> d x 0 empty matrix
         self.assertIsInstance(result, str)
-        self.assertIn("map", result)
+        self.assertIn("matrix", result)
