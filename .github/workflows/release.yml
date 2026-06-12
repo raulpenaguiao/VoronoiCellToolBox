@@ -17,11 +17,22 @@ jobs:
 
       - name: Install Macaulay2
         run: |
-          apt-get update
-          apt-get install -y software-properties-common
-          add-apt-repository -y ppa:macaulay2-dev/macaulay2
-          apt-get update
-          apt-get install -y macaulay2
+          apt-get install -y curl wget
+          LATEST=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+          VERSION=${LATEST#release-}
+          UBUNTU=$(lsb_release -rs)
+          URL=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest \
+            | grep browser_download_url \
+            | grep "ubuntu.*${UBUNTU}.*\.deb" \
+            | cut -d'"' -f4 | head -1)
+          if [ -z "$URL" ]; then
+            URL=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest \
+              | grep browser_download_url \
+              | grep "ubuntu.*22\.04.*\.deb" \
+              | cut -d'"' -f4 | head -1)
+          fi
+          wget -q "$URL" -O m2.deb
+          apt-get install -y ./m2.deb
 
       - name: Install package and test dependencies
         run: |
