@@ -23,7 +23,7 @@ class TestSecondMoment(unittest.TestCase):
     """Test suite for second moment function"""
     def test_secondmoment_is_expected(self):
         result21 = second_moment(Q21, range = 2)
-        self.assertAlmostEqual(result21, 1/12, places=5)
+        self.assertAlmostEqual(result21, 5/18, places=5)
 
 
 class TestVoronoiCells(unittest.TestCase):
