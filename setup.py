@@ -1,6 +1,4 @@
 import setuptools
-import numpy as np
-import itertools
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
@@ -20,6 +18,5 @@ setuptools.setup(
         'VoronoiCellToolBox': ['templatecomputation.m2'],  # Include the template
     },
     include_package_data=True,
-    include_dirs=[np.get_include()],
     zip_safe=False,
 )
