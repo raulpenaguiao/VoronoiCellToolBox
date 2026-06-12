@@ -20,7 +20,7 @@
 import random
 import unittest
 from sage.all import Matrix, QQ
-from VoronoiCellToolBox.orchestration import barycentre
+from VoronoiCellToolBox.orchestration import barycentre, VectorizedVertex_m2
 
 
 class TestM2API(unittest.TestCase):
@@ -53,3 +53,30 @@ class TestM2API(unittest.TestCase):
             #print("Got =", result)
             # Assert that the result matches the expected value
             self.assertAlmostEqual(result, expected, delta=1e-6)
+
+
+class TestVectorizedVertex(unittest.TestCase):
+
+    def test_single_matrix(self):
+        Q = [[1, 0], [0, 1]]
+        listMatrices = [[[1, 0], [0, 1]]]
+        result = VectorizedVertex_m2(listMatrices, Q)
+        # One input matrix -> one vertex column: "matrix {{1/2}, {1/2}}"
+        self.assertIsInstance(result, str)
+        self.assertIn("matrix", result)
+        self.assertIn("1/2", result)
+
+    def test_two_matrices(self):
+        Q = [[1, 0], [0, 1]]
+        listMatrices = [[[1, 0], [0, 1]], [[0, 1], [1, 0]]]
+        result = VectorizedVertex_m2(listMatrices, Q)
+        # Two input matrices -> two vertex columns horizontally concatenated
+        self.assertIsInstance(result, str)
+        self.assertIn("matrix", result)
+
+    def test_empty_list(self):
+        Q = [[1, 0], [0, 1]]
+        result = VectorizedVertex_m2([], Q)
+        # Empty input -> d x 0 empty matrix
+        self.assertIsInstance(result, str)
+        self.assertIn("map", result)
