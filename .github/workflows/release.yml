@@ -18,23 +18,7 @@ jobs:
       - name: Install Macaulay2
         run: |
           apt-get update
-          apt-get install -y curl wget
-          RELEASE=$(curl -s https://api.github.com/repos/Macaulay2/M2/releases/latest)
-          echo "Available assets:"
-          echo "$RELEASE" | grep browser_download_url | cut -d'"' -f4
-          UBUNTU_VER=$(. /etc/os-release && echo "$VERSION_ID")
-          UBUNTU_NAME=$(. /etc/os-release && echo "$UBUNTU_CODENAME")
-          URL=$(echo "$RELEASE" | grep browser_download_url \
-            | grep -i "ubuntu.*\(${UBUNTU_VER}\|${UBUNTU_NAME}\).*\.deb" \
-            | cut -d'"' -f4 | head -1)
-          if [ -z "$URL" ]; then
-            URL=$(echo "$RELEASE" | grep browser_download_url \
-              | grep -i "ubuntu.*\(22\.04\|jammy\).*\.deb" \
-              | cut -d'"' -f4 | head -1)
-          fi
-          echo "Downloading: $URL"
-          wget -q "$URL" -O m2.deb
-          apt-get install -y ./m2.deb
+          apt-get install -y macaulay2
 
       - name: Install package and test dependencies
         run: |

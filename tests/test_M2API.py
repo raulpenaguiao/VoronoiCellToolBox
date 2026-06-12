@@ -52,7 +52,8 @@ class TestM2API(unittest.TestCase):
             #print("Expected =", expected)
             #print("Got =", result)
             # Assert that the result matches the expected value
-            self.assertAlmostEqual(result, expected, delta=1e-6)
+            for j in range(dim):
+                self.assertAlmostEqual(result[j][0], expected[j][0], delta=1e-6)
 
 
 class TestVectorizedVertex(unittest.TestCase):
