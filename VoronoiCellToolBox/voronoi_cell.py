@@ -16,7 +16,7 @@ from sage.all import Polyhedron, vector, dimension, Matrix, Rational, QQ
 from sage.arith.functions import LCM_list
 
 def VCell(Q, **rangeorlist):
-    """
+    r"""
     Computes the Voronoi cell of the Z^d lattice with metric `Q`
 
     This condition is crucial for validating that the matrix `Q` represents
@@ -81,8 +81,8 @@ def VCell(Q, **rangeorlist):
 
 
 def FromMatrixPositionToListPosition(i: int, j: int, d: int) -> int:
-    """
-    Maps the position (i, j) on the $d \times d$ matrix to a list index, so that 
+    r"""
+    Maps the position (i, j) on the $d \times d$ matrix to a list index, so that
     each symmetric entry can be encoded in a list of size $\frac{d\times (d+1)}{2}$.
 
     Parameters:
@@ -109,7 +109,7 @@ def FromMatrixPositionToListPosition(i: int, j: int, d: int) -> int:
 
 
 def matrixify(list_of_ute, d):
-    """
+    r"""
     Converts a list of upper triangular entries into a $d \times d$ matrix.
 
     Parameters:
@@ -126,7 +126,7 @@ def matrixify(list_of_ute, d):
 
 #calculates equation of wall in secondary cone
 def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, verbose: bool = False) -> list:
-    """
+    r"""
     Finds the linear inequality that a matrix must satisfy in order for a
     particular potential relevant vector nonRelevantVectors to not be relevant due to the 
     conditions imposed by the list of relevant vectors neighborVectors
@@ -171,7 +171,7 @@ def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, ve
 #\sum a_{i, j} * q_{i, j} <= 0 for newv to NOT be relevant   
 
 def lcmReduce(v):
-    """
+    r"""
     Reduces a vector by finding the least common multiple of its denominators
     and scaling the vector accordingly.
 
@@ -191,7 +191,7 @@ def lcmReduce(v):
     return vector(gcdReduce([vi*lcm for vi in v]))
 
 def gcdReduce(v):
-    """
+    r"""
     Reduces a vector of integers by finding the greatest common divisor of its components
     and scaling the vector accordingly.
 
@@ -209,7 +209,7 @@ def gcdReduce(v):
 
 
 def gcd(a, b):
-    """
+    r"""
     Computes the greatest common divisor of two integers.
 
     Parameters:
@@ -228,7 +228,7 @@ def gcd(a, b):
     return gcd(b%a, a)
 
 def GCD_list(v):
-    """
+    r"""
     Computes the greatest common divisor of a list of integers.
 
     Parameters:
@@ -246,7 +246,7 @@ def GCD_list(v):
     return GCD_list([gcd(v[0], v[1])] + v[2:] )
 
 def relevant_vector(Q, F):
-    """
+    r"""
     For a facet F of the voronoi cell V, this function computes 
     the corresponding relevant vector.
 
@@ -278,7 +278,7 @@ def relevant_vector(Q, F):
     #This gives a scalar multiple of the relevant vector, but which one?
 
 def Qform(v, Q):
-    """
+    r"""
     For a matrix $Q$ defining a metric on $Z^d$, and a vector v, this function 
     computes the quadratic form $v^T Q v$.
     Parameters:
@@ -293,7 +293,7 @@ def Qform(v, Q):
 
 
 def equidistantPoint(vlist, Q):
-    """
+    r"""
     Given a list of non-zero lattice points, 
     this function computes the equidistant point to all points and zero
     Parameters:
@@ -312,7 +312,7 @@ def equidistantPoint(vlist, Q):
     return (2*T*Matrix(Q)).inverse()*vector([Qform(v, Q) for v in vlist])
     
 def relevantVectorDictionary(P, Q):
-    """
+    r"""
     Computes a dictionary, exposing the relevant vectors associated with each vertex of P.
     For each vertex v, the relevant vector relative to each facet incident to v is computed.
 
@@ -340,7 +340,7 @@ def relevantVectorDictionary(P, Q):
 
 
 def secondary_cone(Q, verbose = False, **rangeorlist):
-    """
+    r"""
     Computes a Polyhedron type object that describes all matrices Q' 
     that have the same relevant vector structure as Q 
     
@@ -404,7 +404,7 @@ def secondary_cone(Q, verbose = False, **rangeorlist):
     return Polyhedron(ieqs = ineqs)
 
 def rayify(cone):
-    """
+    r"""
     This function is a much better way of describing the secondary cone.
     Parameters:
         cone (Polyhedron): The cone to be rayified.
@@ -422,7 +422,7 @@ def rayify(cone):
 
 
 def pulling_triangulation(P):
-    """
+    r"""
     Computes a pulling triangulation of a polyhedron P.
     Parameters:
         P (Polyhedron): The polyhedron to be triangulated.
@@ -451,7 +451,7 @@ def pulling_triangulation(P):
 
 #function to output Delaunay sets associated to each vertex, outputs as a dictionary with vertices as keys
 def Delsets(VC, Q, **rangeorlist):
-    """
+    r"""
     Computes a dictionary whereby each vertex in the Voronoi cell VC is associated with its Delaunay set.
     That is the collection of lattice points that are closest to it.
 
@@ -515,7 +515,7 @@ def Delsets(VC, Q, **rangeorlist):
 
 #function to output Delaunay set associated to any point in the VC (do not use this if running Delsets anyway, just use the dictionary)
 def Delset(Q, v, **rangeorlist):
-    """
+    r"""
     For each vertex in the Voronoi cell VC computes the corresponding Delaunay set.
 
     Parameters:
@@ -566,7 +566,7 @@ def Delset(Q, v, **rangeorlist):
 
 
 def VertexFromRelevantVectors(B, Q, verbose = False):
-    """
+    r"""
     Computes the vertex coordinates from a matrix of relevant vectors using the formula:
     $\vec{v} = \frac{1}{2} Q^{-1}(B^T)^{-1}b_Q$
 
@@ -612,7 +612,7 @@ def VertexFromRelevantVectors(B, Q, verbose = False):
 
 
 def smMatrixSimplex(Q, verbose = False, **rangeorlist):
-    """
+    r"""
     Computes the second moment of the Voronoi cell defined by the quadratic form Q,
     in the inherited metric given by Q.
 
@@ -671,7 +671,7 @@ def smMatrixSimplex(Q, verbose = False, **rangeorlist):
 
 
 def second_moment(Q, **rangeorlist):
-    """
+    r"""
     Computes the second moment of the Voronoi cell defined by the quadratic form Q. TODO
 
     Parameters:
@@ -701,7 +701,7 @@ def second_moment(Q, **rangeorlist):
     import math
     dp2fact = math.factorial(d+2)
     for triangle in pt:
-        """
+        r"""
         det T / (sqrt(det Q) (d+2)! ) ( || (d+1) s ||_Q^2 + sum ||v_i||_Q^2 )
         """
         # Compute the second moment of the simplex defined by the vertices in triangle

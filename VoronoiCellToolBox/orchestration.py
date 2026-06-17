@@ -1,8 +1,11 @@
+import re
 import subprocess
 from importlib.resources import files
 from numbers import Integral as numbersIntegral
 from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
+
+_M2_POLYNOMIAL_RE = re.compile(r'^[-+*/^()\d\sq_]+$')
 
 # Define function dependencies for proper loading order
 FUNCTION_DEPENDENCIES = {
@@ -113,13 +116,15 @@ toString barycentre({{VECTORS}}, {{DIMENSION}})
 
     return result
 
-def normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False):
+def normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False, debug_m2=False):
     """
     Execute a Sage computation and pass results to Macaulay2.
 
     Parameters:
     -----------
     Q : matrix
+    debug_m2 : bool
+        Print the full raw Macaulay2 output before any processing.
 
     Returns:
     --------
@@ -160,13 +165,30 @@ toString Zpoly
         m2_input_string = m2_input_string.replace("{{verboseVertecExpressions}}", "false")
 
     # Step 3: Run Macaulay2
-    result = macaulay2.eval(m2_input_string)
-    result = result.split('\n')[-1].strip()
+    raw_result = macaulay2.eval(m2_input_string)
+
+    # C: debug flag — show raw output before any processing
+    if debug_m2:
+        print("=== Raw Macaulay2 output ===\n" + raw_result + "\n============================")
+
+    # A: detect known M2 fatal-error markers
+    if "--back trace--" in raw_result:
+        raise RuntimeError(f"Macaulay2 computation failed (back trace):\n{raw_result}")
+
+    result = raw_result.split('\n')[-1].strip()
+
+    # B: validate output looks like a rational function in q_N variables
+    if result and not _M2_POLYNOMIAL_RE.fullmatch(result):
+        raise RuntimeError(
+            f"Macaulay2 output does not look like a polynomial/rational function: {result!r}\n"
+            f"Full output:\n{raw_result}"
+        )
+
     return result  # return only the last line which contains the polynomial
 
 
-def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False):
-    result = normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex)
+def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False, debug_m2=False):
+    result = normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2)
     if verboseComputationProgress:
         print("Debug computation progress: result = " + str(result))
     elif verboseSecondMoments:
