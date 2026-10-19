@@ -2,9 +2,10 @@ import re
 import subprocess
 from importlib.resources import files
 from numbers import Integral as numbersIntegral
+from sage.all import PolynomialRing, QQ, sage_eval
 from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
-from VoronoiCellToolBox.voronoi_cell import VCell, reduce_metric
+from VoronoiCellToolBox.voronoi_cell import VCell, reduce_metric, is_generic
 
 _M2_POLYNOMIAL_RE = re.compile(r'^[-+*/^()\d\sq_]+$')
 _M2_OUTPUT_LABEL_RE = re.compile(r'^oo\d+\s*=\s*')
@@ -243,6 +244,80 @@ def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False,
     if '=' in result:
         result = result.split('=')[-1].strip()
     return result  # return only the last line which contains the polynomial
+
+
+def chamber_ring(d):
+    r"""
+    Return the fraction field `\QQ(q_0, \dots, q_{N-1})`, `N = d(d+1)/2`, in which
+    :func:`chamber_second_moment` returns its result. The variable `q_k` is the `k`-th
+    upper-triangular entry of the metric in row-major order: for `d = 2`,
+    `Q = [[q_0, q_1], [q_1, q_2]]`.
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import chamber_ring
+        sage: chamber_ring(2)
+        Fraction Field of Multivariate Polynomial Ring in q_0, q_1, q_2 over Rational Field
+    """
+    return PolynomialRing(QQ, ['q_%d' % k for k in range(d*(d+1)//2)]).fraction_field()
+
+
+def metric_coordinates(Q):
+    r"""
+    Return the upper-triangular entries of `Q` in row-major order, the point at which a
+    chamber function in :func:`chamber_ring` is evaluated: ``f(*metric_coordinates(Q))``.
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import metric_coordinates
+        sage: metric_coordinates([[2, -1], [-1, 3]])
+        [2, -1, 3]
+    """
+    d = len(Q)
+    return [QQ(Q[i][j]) for i in range(d) for j in range(i, d)]
+
+
+def chamber_second_moment(Q, allow_nongeneric=False):
+    r"""
+    Return the second moment on the whole secondary cone of `Q`, as a rational function of
+    the entries of the metric.
+
+    For every `Q'` in the secondary cone of `Q` (:func:`secondary_cone`), the second moment
+    ``second_moment(Q')`` equals ``f(*metric_coordinates(Q'))``, where ``f`` is the output.
+    The vertices of the Voronoi cell are rational functions of `Q'` on the cone, so the
+    integral over a fixed triangulation is one too; the symbolic integration runs in
+    Macaulay2. Metrics with relevant vectors outside `\{-2..2\}^d` are LLL-reduced first and
+    the result is substituted back.
+
+    The normalized second moment on the cone is ``f / (d * det(Q')^(1/d))``.
+
+    INPUT:
+
+    - ``Q`` -- a positive definite symmetric matrix
+    - ``allow_nongeneric`` -- (default: ``False``) a non-generic `Q` lies on a wall between
+      chambers, and its formula is only valid on that face. By default a ``ValueError`` is
+      raised; with ``True`` the face formula is returned.
+
+    OUTPUT: an element of :func:`chamber_ring`
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import chamber_second_moment, metric_coordinates, second_moment
+        sage: f = chamber_second_moment([[2, -1], [-1, 2]]); f
+        (2*q_0*q_1^2 + 2*q_1^3 - q_0^2*q_2 + 2*q_1^2*q_2 - q_0*q_2^2)/(12*q_1^2 - 12*q_0*q_2)
+        sage: Qp = [[3, -1], [-1, 5]]                       # another metric in the same chamber
+        sage: f(*metric_coordinates(Qp)) == second_moment(Qp)
+        True
+        sage: chamber_second_moment([[1, 0], [0, 1]])
+        Traceback (most recent call last):
+        ...
+        ValueError: Q is not generic (it lies on a wall between chambers); pass allow_nongeneric=True for the formula on that face
+    """
+    if not allow_nongeneric and not is_generic(Q):
+        raise ValueError("Q is not generic (it lies on a wall between chambers); pass allow_nongeneric=True for the formula on that face")
+    R = chamber_ring(len(Q))
+    result = normalizedChamberSecondMomentPolynomial(Q)
+    return R(sage_eval(result, locals={str(g): g for g in R.gens()}))
 
 
 

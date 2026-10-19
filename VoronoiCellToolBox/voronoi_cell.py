@@ -1,19 +1,57 @@
 r"""
-Computes the Voronoi cell of a lattice given by a matrix
-===============================================
+Voronoi cells of the lattice `\ZZ^d` with a metric `Q`
+======================================================
 
-TODO description
+A positive definite symmetric matrix `Q` (a Gram matrix) defines the inner product
+`\langle x, y \rangle_Q = x^T Q y` on `\RR^d`. This module computes, exactly over `\QQ`:
+
+- the Voronoi cell `V_Q = \{x : x^T Q x \le (x-v)^T Q (x-v) \text{ for all } v \in \ZZ^d\}`
+  (:func:`voronoi_cell`), its relevant vectors (:func:`relevant_vectors`), and whether it is
+  primitive, that is, whether `Q` lies in the interior of a secondary cone (:func:`is_generic`);
+- the secondary cone of `Q`: the metrics whose Voronoi cell has the same combinatorics
+  (:func:`secondary_cone`);
+- a pulling triangulation (:func:`pulling_triangulation`) and the second moment
+  `SM(Q) = \int_{V_Q} x^T Q x \, dx` (:func:`second_moment`), with Euclidean measure, so the
+  cell has volume 1, and the dimensionless `G(Q) = SM(Q) / (d \det(Q)^{1/d})`
+  (:func:`normalized_second_moment`).
+
+Every cell is certified: :func:`VCell` checks that the computed polytope has volume 1, which
+fails if a relevant vector was missed.
 
 EXAMPLES::
-TODO examples
+
+    sage: from VoronoiCellToolBox import voronoi_cell, second_moment, normalized_second_moment
+    sage: Q = [[2, -1], [-1, 2]]                     # the hexagonal lattice
+    sage: voronoi_cell(Q).n_vertices()
+    6
+    sage: second_moment(Q)
+    5/18
+    sage: normalized_second_moment(Q)
+    5/108*sqrt(3)
 """
 
 import math
 import numpy
 import itertools
-import random
-from sage.all import Polyhedron, vector, dimension, Matrix, Rational, QQ
+from sage.all import Polyhedron, vector, dimension, Matrix, Rational, QQ, ZZ, SR, gcd as sage_gcd
 from sage.arith.functions import LCM_list
+
+
+def _candidates(d, rangeorlist, default_range=None):
+    r"""
+    The list of candidate relevant vectors given by ``range=r`` (all of `\{-r..r\}^d \setminus 0`)
+    or ``list=[...]``. ``default_range`` is used when neither is given.
+    """
+    if "range" in rangeorlist or ("list" not in rangeorlist and default_range is not None):
+        r = rangeorlist.get("range", default_range)
+        if (r <= 0):
+            raise ValueError("The range must be a positive integer.")
+        p = [list(vec) for vec in itertools.product(range(-r, r+1), repeat=d)]
+        p.remove([0] * d)
+        return p
+    if "list" in rangeorlist:
+        return rangeorlist["list"]
+    raise ValueError("A range or list of potential relevant vectors needs to be given.")
 
 def VCell(Q, **rangeorlist):
     r"""
@@ -44,26 +82,28 @@ def VCell(Q, **rangeorlist):
 
     Note:
     - Ensure that `Q` is a valid square matrix before calling this function.
-    - The determinant computation uses NumPy's `linalg.det` method, which may
-      introduce floating-point inaccuracies for very large or very small values.
+    - Symmetry and positive definiteness are checked exactly; a ``ValueError`` is raised otherwise.
+    - Raises an exception with message "relevant vector list not complete" when the polytope
+      cut out by the candidates does not have volume 1. :func:`voronoi_cell` chooses the
+      candidates automatically.
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import VCell
+        sage: sorted(VCell([[2, -1], [-1, 2]], range=2).vertices_list())
+        [[-2/3, -1/3], [-1/3, -2/3], [-1/3, 1/3], [1/3, -1/3], [1/3, 2/3], [2/3, 1/3]]
+        sage: VCell([[61, 11], [11, 2]], range=2)
+        Traceback (most recent call last):
+        ...
+        Exception: relevant vector list not complete
     """
-    if numpy.linalg.det(numpy.array(Q)) <=0: 
-        raise Exception(f"Matrix {Q} is not positive-definite.")
-        return "your matrix is not positive-definite."
-    if (numpy.array(Q).transpose() != numpy.array(Q)).any():
-        raise Exception("your matrix is not symmetric.")
-        return "your matrix is not symmetric."
+    M = Matrix(QQ, Q)
+    if not M.is_symmetric():
+        raise ValueError(f"Matrix {Q} is not symmetric.")
+    if not M.is_positive_definite():
+        raise ValueError(f"Matrix {Q} is not positive-definite.")
     d = len(Q)
-    if "range" in rangeorlist:
-        r = rangeorlist["range"]
-        if (r <= 0):
-            raise Exception("The range must be a positive integer.")
-        p = [list(vec) for vec in itertools.product(range(-r, r+1), repeat=d)]
-        p.remove([0] * d)
-    elif "list" in rangeorlist:
-        p = rangeorlist["list"]
-    else:
-        raise Exception("A range or list of potential relevant vectors needs to be given.")
+    p = _candidates(d, rangeorlist)
     ineqs = []
     for vert in p:
         #Collect an inequality for each potential relevant vector (not all may be useful)
@@ -95,12 +135,102 @@ def reduce_metric(Q):
     Returns:
         tuple: (Qr, U), with Qr a list of lists and U a unimodular Sage matrix.
 
-    Usage:
-        Qr, U = reduce_metric([[5, 3], [3, 2]]) # Qr == [[1, 0], [0, 1]], U == [[-1, 1], [1, -2]]
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import reduce_metric
+        sage: Qr, U = reduce_metric([[5, 3], [3, 2]])
+        sage: Qr
+        [[1, 0], [0, 1]]
+        sage: U
+        [-1  1]
+        [ 1 -2]
     """
     U = Matrix(QQ, Q).LLL_gram()
     Qr = U.transpose() * Matrix(QQ, Q) * U
     return [list(row) for row in Qr.rows()], U
+
+
+def voronoi_cell(Q, candidate_range=None):
+    r"""
+    Return the Voronoi cell of `\ZZ^d` with metric `Q`, as an exact Sage polyhedron.
+
+    The candidate relevant vectors are chosen automatically: `Q` is LLL-reduced to
+    `Q_r = U^T Q U` (:func:`reduce_metric`), the cell of `Q_r` is computed from the candidates
+    `\{-r..r\}^d` with `r = 2, 3, \dots` until it has volume 1, and it is mapped back by
+    `V_Q = U V_{Q_r}`. The volume-1 check certifies that no relevant vector was missed.
+
+    INPUT:
+
+    - ``Q`` -- a positive definite symmetric matrix (list of lists or Sage matrix)
+    - ``candidate_range`` -- (default: ``None``) if given, use exactly the candidates
+      `\{-r..r\}^d` for `Q` itself, as ``VCell(Q, range=candidate_range)`` does
+
+    OUTPUT: a ``Polyhedron`` over `\QQ`
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import voronoi_cell
+        sage: voronoi_cell([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]).f_vector()  # A_3^*: truncated octahedron
+        (1, 24, 36, 14, 1)
+        sage: V = voronoi_cell([[61, 11], [11, 2]])   # relevant vectors far outside {-2..2}^2
+        sage: V.volume(), V.n_facets()
+        (1, 4)
+    """
+    if candidate_range is not None:
+        return VCell(Q, range=candidate_range)
+    Qr, U = reduce_metric(Q)
+    r = 2
+    while True:
+        try:
+            Vr = VCell(Qr, range=r)
+            break
+        except Exception as e:
+            if "relevant vector list not complete" not in str(e):
+                raise
+            r += 1
+    if U == 1:
+        return Vr
+    return Polyhedron(vertices=[U * vector(QQ, v) for v in Vr.vertices()], base_ring=QQ)
+
+
+def relevant_vectors(Q):
+    r"""
+    Return the relevant vectors of `Q`: the `v \in \ZZ^d` whose bisector
+    `\{x : x^T Q v = v^T Q v / 2\}` contains a facet of the Voronoi cell.
+
+    There are `2(2^d - 1)` of them exactly when `Q` is generic (:func:`is_generic`).
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import relevant_vectors
+        sage: sorted(relevant_vectors([[2, -1], [-1, 2]]))
+        [(-1, -1), (-1, 0), (0, -1), (0, 1), (1, 0), (1, 1)]
+        sage: len(relevant_vectors([[1, 0], [0, 1]]))       # the square lattice is not generic
+        4
+    """
+    VC = voronoi_cell(Q)
+    return [tuple(relevant_vector(Q, F)) for F in VC.facets()]
+
+
+def is_generic(Q):
+    r"""
+    Return whether `Q` lies in the interior of a secondary cone, that is, whether its Voronoi
+    cell is primitive (has the maximal number `2(2^d - 1)` of facets).
+
+    Only for generic `Q` is the chamber second moment one rational function on a full
+    neighbourhood of `Q`. (Testing that every vertex lies on exactly `d` facets is not enough
+    in general: the square lattice passes that test.)
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import is_generic
+        sage: is_generic([[2, -1], [-1, 2]]), is_generic([[1, 0], [0, 1]])
+        (True, False)
+        sage: is_generic([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]])
+        True
+    """
+    d = len(Q)
+    return voronoi_cell(Q).n_facets() == 2 * (2**d - 1)
 
 
 def FromMatrixPositionToListPosition(i: int, j: int, d: int) -> int:
@@ -142,8 +272,11 @@ def matrixify(list_of_ute, d):
     Returns:
         list: A $d \times d$ matrix represented as a list of lists.
     
-    Usage:
-        matrixify([3, 1, 5, 3, -1, 2], 3) #Returns [[3, 1, 5], [1, 3, -1], [5, -1, 2]]
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import matrixify
+        sage: matrixify([3, 1, 5, 3, -1, 2], 3)
+        [[3, 1, 5], [1, 3, -1], [5, -1, 2]]
     """
     return [[list_of_ute[int(FromMatrixPositionToListPosition(i, j, d))]  for j in range(d)] for i in range(d)]
 
@@ -165,10 +298,11 @@ def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, ve
         list: The coefficients of the inequality on the matrix coefficients
         defining the wall that decides if isolatedVector is relevant.
 
-    Usage:
-        rvecs = [(0, 1, 1), (1, 1, 1), (0, 0, 1)]
-        nrvec = [-1, 0, 0]
-        eq_of_wall(rvecs, nrvec, 3, True) #Returns [2, 2, 2, 0, 0, 0]
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import eq_of_wall
+        sage: eq_of_wall([(0, 1, 1), (1, 1, 1), (0, 0, 1)], [-1, 0, 0], 3)
+        [2, 2, 2, 0, 0, 0]
 
     """
     if verbose:
@@ -293,12 +427,13 @@ def relevant_vector(Q, F):
         defined by the metric matrix Q.
         The behaviour of this function is not defined when F is not a facet of V.
     """
-    v = (1/2)*vector(F.ambient_Hrepresentation()[0][1:])*(Matrix(Q).inverse())
-    return -lcmReduce(v) 
-    #We have no idea why - seems to work every time but
-    #it is either 1 or -1
-    #1/2 * t * Q-1
-    #This gives a scalar multiple of the relevant vector, but which one?
+    # The facet is b + a.x >= 0 with (a, b) = c (-2 Q v, v^T Q v) for some unknown c > 0.
+    # So w = -Q^{-1} a = 2 c v, and b = w^T Q w / (4 c) gives c, hence v = 2 b w / (w^T Q w).
+    Qm = Matrix(QQ, Q)
+    ieq = F.ambient_Hrepresentation()[0]
+    b, a = QQ(ieq[0]), vector(QQ, ieq[1:])
+    w = -Qm.inverse() * a
+    return vector(ZZ, 2 * b * w / (w * Qm * w))
 
 def Qform(v, Q):
     r"""
@@ -309,8 +444,11 @@ def Qform(v, Q):
         Q (Matrix): The metric matrix.
     Returns:
         Scalar: The value of the quadratic form.
-    Usage:
-        Qform(vector([1, 2]), Matrix([[2, 0], [0, 2]])) #Returns 8
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import Qform
+        sage: Qform(vector([1, 2]), Matrix([[2, 0], [0, 2]]))
+        10
     """
     return (Matrix([[vi] for vi in v]).transpose()*Matrix(Q)*Matrix([v]).transpose())[0][0]
 
@@ -364,67 +502,111 @@ def relevantVectorDictionary(P, Q):
 
 def secondary_cone(Q, verbose = False, **rangeorlist):
     r"""
-    Computes a Polyhedron type object that describes all matrices Q' 
-    that have the same relevant vector structure as Q 
-    
-    Parameters:
-        Q (Matrix): The metric matrix defining the Voronoi cell.
-        range = r (int): The range of potential relevant vectors.
-        OR
-        list = prv (list): A list of potential relevant vectors.
+    Return the secondary cone of a generic metric `Q`: the closed cone of metrics `Q'` whose
+    Voronoi cell has the same relevant vectors and the same vertex structure as that of `Q`.
 
-    Returns:
-        Polyhedron: The secondary cone of Q.
+    The cone lives in the space of symmetric matrices with coordinates the upper-triangular
+    entries in row-major order, `(q_{11}, q_{12}, \dots, q_{1d}, q_{22}, \dots, q_{dd})`, the
+    variables `q_0, q_1, \dots` of :func:`chamber_second_moment`; :func:`matrixify` converts a
+    ray back to a matrix. For each vertex of the cell (determined by its `d` relevant vectors)
+    and each candidate vector, the wall equation of :func:`eq_of_wall` must stay nonnegative.
 
-    Usage:
-        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
-        prv = [list(vec) for vec in itertools.product(range(-2, 3), repeat=3)]
-        prv.remove([0] * 3)
-        secondary_cone(Q, prv)
+    INPUT:
+
+    - ``Q`` -- a generic positive definite metric
+    - ``range=r`` or ``list=[...]`` -- (optional) the candidate relevant vectors for `Q` itself.
+      If neither is given, `Q` is LLL-reduced, the cone of the reduced metric is computed with
+      ``range=2``, and it is mapped back (`Q' \mapsto U^{-T} Q' U^{-1}`).
+
+    OUTPUT: a ``Polyhedron`` (a pointed cone over `\QQ`)
+
+    A ``ValueError`` is raised when `Q` is not generic, since its secondary cone is then not
+    full-dimensional.
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import secondary_cone, rayify, matrixify
+        sage: C = secondary_cone([[2, -1], [-1, 2]])
+        sage: sorted(matrixify(list(r), 2) for r in rayify(C))
+        [[[0, 0], [0, 1]], [[1, -1], [-1, 1]], [[1, 0], [0, 0]]]
+        sage: secondary_cone([[1, 0], [0, 1]])
+        Traceback (most recent call last):
+        ...
+        ValueError: Q is not generic: its Voronoi cell has 4 facets, not 2(2^d - 1) = 6
     """
-
     d = len(Q)
-    prv = None
-    if "range" in rangeorlist:
-        r = rangeorlist["range"]
-        if (r <= 0):
-            raise Exception("The range must be a positive integer.")
-        prv = [list(vec) for vec in itertools.product(range(-r, r+1), repeat=d)]
-        prv.remove([0] * d)
-    elif "list" in rangeorlist:
-        prv = rangeorlist["list"]
-    else:
-        raise Exception("A range or list of potential relevant vectors needs to be given.")
-    
+    if not rangeorlist:
+        Qr, U = reduce_metric(Q)
+        Cr = secondary_cone(Qr, verbose, range=2)
+        if U == 1:
+            return Cr
+        Uinv = U.inverse()
+        rays = []
+        for ray in rayify(Cr):
+            X = Uinv.transpose() * Matrix(QQ, matrixify(list(ray), d)) * Uinv
+            rays.append([X[i, j] for i in range(d) for j in range(i, d)])
+        return Polyhedron(rays=rays, base_ring=QQ)
+
+    prv = _candidates(d, rangeorlist)
     VC = VCell(Q, list=prv)
+    if VC.n_facets() != 2 * (2**d - 1):
+        raise ValueError(f"Q is not generic: its Voronoi cell has {VC.n_facets()} facets, not 2(2^d - 1) = {2 * (2**d - 1)}")
     ifs = relevantVectorDictionary(VC, Q)
-    nrvs = []
-    rvs = [] #nrvs = prv - relevant vectors 
-    for v in prv:
-        isRelevant = False
-        for F in VC.facets():
-            if vector(v) == vector(relevant_vector(Q, F)):
-                isRelevant = True
-        if isRelevant == True:
-            rvs += [v]
-        else:
-            nrvs += [v]
-    ineqs = []
+    ineqs = set()
+    for vert, opposite in _regulator_points(ifs, d).items():
+        neighbors = ifs[vert]
+        B = Matrix(QQ, neighbors)
+        Binv = B.inverse()
+        outer = [B.row(j).column() * B.row(j).row() for j in range(d)]
+        for vec in opposite:
+            # Same functional as eq_of_wall(neighbors, vec, d), computed with one inverse per vertex
+            x = vector(QQ, vec)
+            c = x * Binv
+            M = x.column() * x.row() - sum(c[j] * outer[j] for j in range(d))
+            coeffs = vector(QQ, [M[i, j] if i == j else 2 * M[i, j] for i in range(d) for j in range(i, d)])
+            if coeffs == 0:
+                continue
+            coeffs = coeffs * coeffs.denominator()
+            coeffs = coeffs / sage_gcd(list(coeffs))
+            ineqs.add(tuple(coeffs))
     if verbose:
-        print("v4 - len of ifs = ", len(ifs) , " and len of n relevant vecs = ", len(nrvs))
-    for vert in ifs:
-        for vec in prv:
-            if not(vec in ifs[vert]):
-                #compute wall crossing between ifs[vert] and vec
-                eq_wall = eq_of_wall(ifs[vert], vec, d, verbose)
-                ineqs += [ [0] + eq_wall]
-                Qxeq_wall = 0
-                for i in range(d):
-                    for j in range(i+1):
-                        Qxeq_wall += Q[i][j]*eq_wall[FromMatrixPositionToListPosition(i, j, d)]
-                if verbose and Qxeq_wall < 0:
-                    print(vec, " - ", vert, " - ", ifs[vert], " - ", eq_of_wall(ifs[vert], vec, d))
-    return Polyhedron(ieqs = ineqs)
+        print(len(ifs), "vertices,", len(ineqs), "distinct wall inequalities")
+    return Polyhedron(ieqs=[[0] + list(ieq) for ieq in ineqs], base_ring=QQ)
+
+
+def _regulator_points(ifs, d):
+    r"""
+    For each vertex `v` of a primitive Voronoi cell, with relevant vectors `N(v)`, return the
+    lattice points opposite to the `d+1` facets of the Delaunay simplex `S_v = \{0\} \cup N(v)`,
+    that is, the points `p'` such that `S'` = (facet of `S_v`) `\cup \{p'\}` is the adjacent
+    Delaunay simplex. By Voronoi's theory the secondary cone is cut out by the "regulator"
+    inequalities "`p'` is not inside the empty sphere of `S_v`" (:func:`eq_of_wall`) over these
+    pairs alone.
+
+    - Facets containing `0` are shared with `S_w` for the vertices `w` adjacent to `v` along an
+      edge of the cell: `p'` is the vector of `N(w)` not in `N(v)`.
+    - The facet `N(v)` opposite `0`: translating by `-n` for some `n \in N(v)`, the adjacent
+      simplex is `S_w` for the vertex `w \ne v - n` with `N(w) \supset \{m - n : m \in N(v), m \ne n\}`,
+      and `p' = n + e` for the remaining vector `e` of `N(w)`.
+    """
+    sets = {vert: {tuple(x) for x in N} for vert, N in ifs.items()}
+    result = {}
+    for vert, N in sets.items():
+        opposite = set()
+        n = next(iter(N))
+        shifted = {tuple(m[i] - n[i] for i in range(d)) for m in N if m != n}
+        minus_n = tuple(-c for c in n)
+        for w, Nw in sets.items():
+            if len(N & Nw) == d - 1:
+                opposite |= Nw - N
+            if shifted <= Nw:
+                rest = Nw - shifted
+                if rest != {minus_n}:
+                    e = next(iter(rest))
+                    opposite.add(tuple(n[i] + e[i] for i in range(d)))
+        result[vert] = opposite
+    return result
+
 
 def rayify(cone):
     r"""
@@ -434,36 +616,41 @@ def rayify(cone):
     Returns:
         list: A list of rays representing the cone.
 
-    Usage:
-        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
-        prv = [list(vec) for vec in itertools.product(range(-2, 3), repeat=3)]
-        prv.remove([0] * 3)
-        SC = secondary_cone(Q, prv)
-        rayify(SC)
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import secondary_cone, rayify
+        sage: sorted(rayify(secondary_cone([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]])))
+        [(0, 0, 0, 0, 0, 1), (0, 0, 0, 1, -1, 1), (0, 0, 0, 1, 0, 0), (1, -1, 0, 1, 0, 0), (1, 0, -1, 0, 0, 1), (1, 0, 0, 0, 0, 0)]
     """
-    return [ray[:] for ray in cone.Vrepresentation()[1:]]
+    return [ray[:] for ray in cone.rays()]
 
 
 def pulling_triangulation(P):
     r"""
-    Computes a pulling triangulation of a polyhedron P.
-    Parameters:
-        P (Polyhedron): The polyhedron to be triangulated.
+    Return a pulling triangulation of the polytope `P`: pull the first vertex `v` and cone it
+    over a pulling triangulation of every facet not containing `v`, recursively. No new
+    vertices are added, so for a Voronoi cell every simplex vertex is a cell vertex, whose
+    coordinates are rational functions of the metric on the whole secondary cone.
 
-    Returns:
-        list: A list of triangles representing the triangulation.
+    INPUT: ``P`` -- a polytope
 
-    Usage:
-        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
-        P = VCell(Q, range=2)
-        len(pulling_triangulation(P)) #Returns 34
+    OUTPUT: a list of simplices, each a list of `\dim P + 1` vertices
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import voronoi_cell, pulling_triangulation
+        sage: T = pulling_triangulation(voronoi_cell([[2, -1], [-1, 2]])); len(T)
+        4
+        sage: T[0]
+        [A vertex at (-2/3, -1/3), A vertex at (1/3, -1/3), A vertex at (2/3, 1/3)]
+        sage: len(pulling_triangulation(voronoi_cell([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]])))
+        34
     """
     #print(P.vertices())
     if(dimension(P) < 2):
         return [list(P.vertices())]
-    vert = P.vertices()
-    index = random.randint(0, len(vert)-1)
-    v = vert[index]
+    # Pull the first vertex, so that the triangulation (and everything built on it) is reproducible
+    v = P.vertices()[0]
     ans = []
     for F in P.facets():
         if not(v in F.vertices()):
@@ -486,10 +673,13 @@ def Delsets(VC, Q, **rangeorlist):
     Returns:
         dict: A dictionary mapping each vertex to its Delaunay set.
 
-    Usage:
-        Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
-        VC = VCell(Q, range=2)
-        len(Delsets(VC, Q, range=2))
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import voronoi_cell, Delsets
+        sage: Q = [[3, -1, -1], [-1, 3, -1], [-1, -1, 3]]
+        sage: D = Delsets(voronoi_cell(Q), Q, range=2)
+        sage: len(D), {P.n_vertices() for P in D.values()}     # 24 vertices, each a Delaunay simplex
+        (24, {4})
     """
     d = len(Q)
     prv = None
@@ -695,28 +885,32 @@ def smMatrixSimplex(Q, verbose = False, **rangeorlist):
 
 def second_moment(Q, **rangeorlist):
     r"""
-    Computes the second moment of the Voronoi cell defined by the quadratic form Q. TODO
+    Return the exact second moment `SM(Q) = \int_{V_Q} x^T Q x \, dx` of the Voronoi cell of `Q`,
+    with Euclidean measure (the cell has volume 1).
 
-    Parameters:
-        Q (Matrix): The quadratic form matrix.
-        rangeorlist (list or range): A list of potential relevant vectors, or a range to search for them.
+    The cell is triangulated (:func:`pulling_triangulation`) and each simplex with vertices
+    `s_0, \dots, s_d` contributes `|\det T| (\|\sum_i s_i\|_Q^2 + \sum_i \|s_i\|_Q^2) / (d+2)!`,
+    where `T` has rows `s_i - s_0`.
 
-    Returns:
-        Rational: The exact second moment of the Voronoi cell (Euclidean measure).
+    INPUT:
 
-    Usage:
-        Q = [[2, -1], [-1, 2]]
-        second_moment(Q, range=2) #Returns 5/18
+    - ``Q`` -- a positive definite symmetric matrix
+    - ``range=r`` or ``list=[...]`` -- (optional) candidate relevant vectors, as in :func:`VCell`;
+      by default they are chosen automatically (:func:`voronoi_cell`)
+
+    OUTPUT: a rational number
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import second_moment
+        sage: second_moment([[2, -1], [-1, 2]])
+        5/18
+        sage: second_moment([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]])
+        19/32
+        sage: second_moment([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+        1/4
     """
-    VC = None
-    if "range" in rangeorlist:
-        r = rangeorlist["range"]
-        VC = VCell(Q, range=r)
-    elif "list" in rangeorlist:
-        prv = rangeorlist["list"]
-        VC = VCell(Q, list=prv)
-    else:
-        raise Exception("A range or list of potential relevant vectors needs to be given.")
+    VC = VCell(Q, **rangeorlist) if rangeorlist else voronoi_cell(Q)
     pt = pulling_triangulation(VC)
     total = 0
     d = len(Q)
@@ -734,4 +928,27 @@ def second_moment(Q, **rangeorlist):
         detT = abs(Matrix(QQ, T).det())
         partial_total = Qform((d+1)*s, Q) + sum([Qform(v, Q) for v in triangle])
         total += detT * partial_total
-    return total / ( dp2fact) 
+    return total / ( dp2fact)
+
+
+def normalized_second_moment(Q, **rangeorlist):
+    r"""
+    Return the dimensionless (normalized) second moment `G(Q) = SM(Q) / (d \det(Q)^{1/d})`,
+    exactly, as a symbolic expression. It is invariant under scaling `Q` and under changes of
+    basis `Q \mapsto U^T Q U`, `U \in GL_d(\ZZ)`; it is the quantity minimized in the lattice
+    quantizer problem.
+
+    INPUT: as for :func:`second_moment`
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import normalized_second_moment
+        sage: G = normalized_second_moment([[2, -1], [-1, 2]]); G
+        5/108*sqrt(3)
+        sage: G.n(digits=8)
+        0.080187537
+        sage: normalized_second_moment([[4, -1, -1, -1], [-1, 4, -1, -1], [-1, -1, 4, -1], [-1, -1, -1, 4]]).n(digits=6)  # A_4^*
+        0.0775588
+    """
+    d = len(Q)
+    return second_moment(Q, **rangeorlist) / (d * SR(Matrix(QQ, Q).det())**(QQ(1)/d)) 

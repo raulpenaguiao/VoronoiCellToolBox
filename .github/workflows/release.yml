@@ -9,7 +9,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: sagemath/sagemath:latest
+      image: sagemath/sagemath:10.6
       options: --user root
 
     steps:
@@ -27,6 +27,9 @@ jobs:
 
       - name: Run tests
         run: sage -python -m pytest tests/ -v
+
+      - name: Run doctests
+        run: sage -t --long VoronoiCellToolBox/
 
   release:
     runs-on: ubuntu-latest
