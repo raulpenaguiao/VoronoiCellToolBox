@@ -80,6 +80,29 @@ def VCell(Q, **rangeorlist):
     return VC
 
 
+def reduce_metric(Q):
+    r"""
+    LLL-reduces the metric `Q` by a unimodular change of basis U, so that Qr = U^T Q U.
+
+    The Voronoi cell of Qr is U^{-1} times the Voronoi cell of Q, so both have the
+    same second moment, and Q' -> U^T Q' U maps the secondary cone of Q onto that of Qr.
+    The relevant vectors of a reduced metric have small entries, which is what makes
+    `VCell(Qr, range=2)` succeed where `VCell(Q, range=2)` misses relevant vectors.
+
+    Parameters:
+        Q (Matrix): The positive definite metric matrix.
+
+    Returns:
+        tuple: (Qr, U), with Qr a list of lists and U a unimodular Sage matrix.
+
+    Usage:
+        Qr, U = reduce_metric([[5, 3], [3, 2]]) # Qr == [[1, 0], [0, 1]], U == [[-1, 1], [1, -2]]
+    """
+    U = Matrix(QQ, Q).LLL_gram()
+    Qr = U.transpose() * Matrix(QQ, Q) * U
+    return [list(row) for row in Qr.rows()], U
+
+
 def FromMatrixPositionToListPosition(i: int, j: int, d: int) -> int:
     r"""
     Maps the position (i, j) on the $d \times d$ matrix to a list index, so that

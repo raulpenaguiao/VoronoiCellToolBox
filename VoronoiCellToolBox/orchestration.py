@@ -4,6 +4,7 @@ from importlib.resources import files
 from numbers import Integral as numbersIntegral
 from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
+from VoronoiCellToolBox.voronoi_cell import VCell, reduce_metric
 
 _M2_POLYNOMIAL_RE = re.compile(r'^[-+*/^()\d\sq_]+$')
 _M2_OUTPUT_LABEL_RE = re.compile(r'^oo\d+\s*=\s*')
@@ -141,6 +142,16 @@ def _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, v
     The raw output is needed by the verbose modes, which print sections of it.
     """
     # Step 1: Run Sage computation
+    # The triangulation is computed with range=2 candidate relevant vectors. If that misses
+    # some relevant vectors of Q, work with the LLL-reduced metric Qr = U^T Q U instead and
+    # substitute back in Macaulay2: SM_Q = SM_Qr(U^T Q U) on the whole chamber of Q.
+    U = None
+    try:
+        VCell(Q, range=2)
+    except Exception as e:
+        if "relevant vector list not complete" not in str(e):
+            raise
+        Q, U = reduce_metric(Q)
     sage_string = FormatPullingTrigMatrix(Q)
     matrix_m2 = macaulifyMatrix(Q)
 
@@ -152,8 +163,17 @@ mat = {{SAGESTRING}};
 metric_matrix = {{SAGESTRING2}};
 d = numrows (mat_0)_0;
 Zpoly = SmPoly(d, mat, metric_matrix, {{verboseComputationProgress}}, {{verboseSecondMoments}}, {{verboseVertecExpressions}});
-toString Zpoly
+{{BASISCHANGE}}toString Zpoly
 """
+    basisChangeCode = ""
+    if U is not None:
+        basisChangeCode = """
+Ured = sub({{UMATRIX}}, R);
+Qback = transpose(Ured) * genericSymmetricMatrix(R, q_0, d) * Ured;
+substitutions = apply(numgens R, k -> R_k => (Listify(Qback, d))_k);
+Zpoly = sub(numerator Zpoly, substitutions) / sub(denominator Zpoly, substitutions);
+""".replace("{{UMATRIX}}", macaulifyMatrix([list(row) for row in U.rows()]))
+    secondMomentCode = secondMomentCode.replace("{{BASISCHANGE}}", basisChangeCode)
 
     # Parse m2 for this function
     m2_input_string += secondMomentCode

@@ -5,7 +5,7 @@
 import contextlib
 import io
 import unittest
-from sage.all import QQ
+from sage.all import QQ, Matrix, PolynomialRing, sage_eval
 from VoronoiCellToolBox.voronoi_cell import second_moment, VCell
 from VoronoiCellToolBox.orchestration import normalizedChamberSecondMomentPolynomial
 
@@ -30,6 +30,29 @@ class TestExactSecondMoment(unittest.TestCase):
         for Q, _ in KNOWN_SECOND_MOMENTS:
             with self.subTest(Q=Q):
                 self.assertEqual(VCell(Q, range=2).volume(), 1)
+
+
+def evaluate_polynomial(polynomial, Q):
+    """Evaluate the rational function string returned by Macaulay2 at the metric Q."""
+    d = len(Q)
+    R = PolynomialRing(QQ, ['q_%d' % k for k in range(d*(d+1)//2)]).fraction_field()
+    f = sage_eval(polynomial, locals={str(g): g for g in R.gens()})
+    return f(*[QQ(Q[i][j]) for i in range(d) for j in range(i, d)])
+
+
+class TestAnyChamber(unittest.TestCase):
+    """Skewed metrics Q = U^T Q0 U have relevant vectors outside range=2; the polynomial must still be right."""
+
+    def test_skewed_metrics(self):
+        U2 = Matrix(QQ, [[7, 2], [3, 1]])
+        U3 = Matrix(QQ, [[1, 3, 0], [0, 1, 0], [2, 6, 1]])
+        for Q0, U, expected in [([[2, -1], [-1, 2]], U2, QQ(5) / 18),
+                                ([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]], U3, QQ(19) / 32)]:
+            Q = [list(row) for row in (U.transpose() * Matrix(QQ, Q0) * U).rows()]
+            with self.subTest(Q=Q):
+                with self.assertRaises(Exception):
+                    VCell(Q, range=2)
+                self.assertEqual(evaluate_polynomial(normalizedChamberSecondMomentPolynomial(Q), Q), expected)
 
 
 class TestVerboseModes(unittest.TestCase):
