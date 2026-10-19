@@ -9,6 +9,7 @@ __all__ = [
     "Delsets",
     "FormatPullingTrigMatrix",
     "second_moment",
+    "smMatrixSimplex",
     "normalizedChamberSecondMomentPolynomial",
     "qnorm_m2",
     "qNormMatrixFormat_m2",

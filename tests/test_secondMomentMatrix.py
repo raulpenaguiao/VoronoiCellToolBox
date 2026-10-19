@@ -92,8 +92,8 @@ class TestSecondMomentMatrix(unittest.TestCase):
         Q = [[2, -1], [-1, 2]]
         result = second_moment(Q, range=2)
 
-        # Verify the result is a positive number
-        self.assertIsInstance(result, (int, float))
+        # Verify the result is an exact positive rational
+        self.assertIn(result, QQ)
         self.assertGreater(result, 0)
 
     def test_identity_metric(self):

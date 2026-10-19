@@ -659,7 +659,7 @@ def smMatrixSimplex(Q, verbose = False, **rangeorlist):
 
         # Compute the matrix T of edge vectors (determinant)
         T = [list(vector(triangle[i]) - vector(triangle[0])) for i in range(1, len(triangle))]
-        detT = abs(numpy.linalg.det(numpy.array(T)))
+        detT = abs(Matrix(QQ, T).det())
 
         # Compute the second moment contribution: det(T) / (sqrt(det Q) * (d+2)!) * (||(d+1)*s||_Q^2 + sum ||v_i||_Q^2)
         partial_total = Qform((d+1)*s_hat, Q) + sum([Qform(v, Q) for v in triangle])
@@ -679,11 +679,11 @@ def second_moment(Q, **rangeorlist):
         rangeorlist (list or range): A list of potential relevant vectors, or a range to search for them.
 
     Returns:
-        float: The second moment of the Voronoi cell.
+        Rational: The exact second moment of the Voronoi cell (Euclidean measure).
 
     Usage:
         Q = [[2, -1], [-1, 2]]
-        second_moment(Q, range=2) #Returns
+        second_moment(Q, range=2) #Returns 5/18
     """
     VC = None
     if "range" in rangeorlist:
@@ -708,7 +708,7 @@ def second_moment(Q, **rangeorlist):
         #  Compute the baricentre and the determinant of the matrix T
         s = sum([vector(v) for v in triangle])/len(triangle)
         T = [list(vector(triangle[i]) - vector(triangle[0]))  for i in range(1, len(triangle))]
-        detT = abs(numpy.linalg.det(numpy.array(T)))
+        detT = abs(Matrix(QQ, T).det())
         partial_total = Qform((d+1)*s, Q) + sum([Qform(v, Q) for v in triangle])
         total += detT * partial_total
     return total / ( dp2fact) 

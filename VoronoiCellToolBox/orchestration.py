@@ -6,6 +6,7 @@ from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
 
 _M2_POLYNOMIAL_RE = re.compile(r'^[-+*/^()\d\sq_]+$')
+_M2_OUTPUT_LABEL_RE = re.compile(r'^oo\d+\s*=\s*')
 
 # Define function dependencies for proper loading order
 FUNCTION_DEPENDENCIES = {
@@ -130,6 +131,15 @@ def normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress=
     --------
     the polynomial string with logs and debug info
     """
+    result, _ = _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2)
+    return result
+
+
+def _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2):
+    """
+    Run SmPoly in Macaulay2 and return (polynomial string, full raw M2 output).
+    The raw output is needed by the verbose modes, which print sections of it.
+    """
     # Step 1: Run Sage computation
     sage_string = FormatPullingTrigMatrix(Q)
     matrix_m2 = macaulifyMatrix(Q)
@@ -176,6 +186,8 @@ toString Zpoly
         raise RuntimeError(f"Macaulay2 computation failed (back trace):\n{raw_result}")
 
     result = raw_result.split('\n')[-1].strip()
+    # When M2 printed anything, the last line carries an output label: "oo1000000018 = (...)/(...)"
+    result = _M2_OUTPUT_LABEL_RE.sub('', result)
 
     # B: validate output looks like a rational function in q_N variables
     if result and not _M2_POLYNOMIAL_RE.fullmatch(result):
@@ -184,15 +196,15 @@ toString Zpoly
             f"Full output:\n{raw_result}"
         )
 
-    return result  # return only the last line which contains the polynomial
+    return result, raw_result
 
 
 def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False, debug_m2=False):
-    result = normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2)
+    result, raw_result = _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2)
     if verboseComputationProgress:
         print("Debug computation progress: result = " + str(result))
     elif verboseSecondMoments:
-        lines = result.splitlines()
+        lines = raw_result.splitlines()
         secondMoment = []
         for i, line in enumerate(lines):
             if "newPolyTriangle = " in line and i + 1 < len(lines):
@@ -201,7 +213,7 @@ def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False,
         print("Debug second moment expressions: \n " + "\n".join(secondMoment))
     elif verboseVertex:
         #find all instances of "concatVertices = " and print the line after it
-        lines = result.splitlines()
+        lines = raw_result.splitlines()
         vertexCoordinates = []
         for i, line in enumerate(lines):
             if "concatVertices = " in line and i + 1 < len(lines):
