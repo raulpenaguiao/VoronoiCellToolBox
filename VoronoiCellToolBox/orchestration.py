@@ -23,7 +23,7 @@ FUNCTION_DEPENDENCIES = {
     "secondMoment": ["qnorm", "barycentre"],
     "VectorizedVertex": ["fromRelevantVectorsToVertex"],
     "makepos": [],
-    "SmPoly": ["VectorizedVertex", "secondMoment", "Listify", "makepos"],
+    "SmPoly": ["Listify", "qNormMatrixFormat", "inverseCofactorMatrix"],
     "symMatricesRing": [],
 }
 
