@@ -1,16 +1,11 @@
--- Takes a dimension d and matVertices structure
--- matVertices encodes a triangulation of the voronoi cell
--- matvertices is a matrix, where each row corresponds to a triangle
--- in each row an entry corresponds to a fromRelevantVectorsToVertex of the triangle
--- a fromRelevantVectorsToVertex is encoded by a matrix
--- output is the rational function giving the second moment for any Voronoi cell in
--- the same chamber as our favorite matrix in terms of the entries of the matrix Q
--- SmPoly(d, matVertices, A, verbose)
+-- The second moment on a whole secondary cone, from a triangulation of the Voronoi cell, as a
+-- rational function of the entries q_0, q_1, ... of the generic symmetric matrix.
+-- SmPoly(d, matVertices, A)
 -- Input:
 --   d: dimension
---   matVertices: list of matrices encoding triangulation
---   A: metric symmetric matrix
---   verbose: boolean flag for verbose output
+--   matVertices: list of simplices; each is a list of d x d matrices B, one per vertex, whose
+--     columns are d relevant vectors through that vertex
+--   A: the metric whose secondary cone is wanted (fixes the orientation of each simplex)
 -- Output:
 --   Rational function for the second moment polynomial of the Voronoi cell
 -- Description:
@@ -22,13 +17,8 @@
 --   polynomials and there is a single division at the end. Each simplex term gets the sign
 --   that makes it positive at A (as makepos does).
 -- Example:
---   SmPoly(2, { {matrix{{1,0},{0,1}}, matrix{{0,1},{1,0}}} }, matrix{{2,0},{0,3}}, false)
-SmPoly = (d, matVertices, A, verboseComputationProgress, verboseSecondMoments, verboseVertex) -> (
-    if(verboseComputationProgress) then print("Starting SmPoly computation for dimension ", toString(d)) else null;
-    if(verboseComputationProgress) then print("Number of triangles: ", toString(#matVertices)) else null;
-    if(verboseComputationProgress) then print("Verbose mode enabled") else null;
-    if(verboseComputationProgress) then print("Vertex matrices", toString matVertices) else null;
-    if(verboseComputationProgress) then print("Metric matrix", toString A) else null;
+--   SmPoly(2, {{matrix{{1,0},{0,1}}, matrix{{1,1},{0,1}}, matrix{{0,1},{1,1}}}}, matrix{{2,-1},{-1,2}})
+SmPoly = (d, matVertices, A) -> (
     G = d*(d+1)//2;
     R = QQ[q_0..q_(G-1)];
     Q = genericSymmetricMatrix(R, q_0, d);
@@ -43,20 +33,14 @@ SmPoly = (d, matVertices, A, verboseComputationProgress, verboseSecondMoments, v
         if not wCache#?key then wCache#key = sub(inverse(transpose(sub(B, QQ))), R) * qNormMatrixFormat(B, Q, d, false);
         wCache#key
     );
-    denom := 2^(d+2) * (d+2)! * detQ^2;
     Znum := 0_R;
-    l = # matVertices;
-    for i from 0 to l-1 do(
-        if(verboseComputationProgress) then print(concatenate(toString i, " of total ", toString l, " - new loop")) else null;
-        W := apply(matVertices_i, wOf);
-        if(verboseVertex) then print(concatenate("concatVertices = \n", toString((1/2*inverseCofactorMatrix(Q, d)) * fold((a, b) -> a | b, W)))) else null;
+    for simplex in matVertices do (
+        W := apply(simplex, wOf);
         s := sum W;
         volumeFactor := det fold((a, b) -> a | b, apply(drop(W, 1), w -> w - W_0));
         if sub(volumeFactor, atA) < 0 then volumeFactor = -volumeFactor;
-        term := volumeFactor * ((transpose(s)*adjQ*s)_(0,0) + sum(W, w -> (transpose(w)*adjQ*w)_(0,0)));
-        if(verboseSecondMoments) then print(concatenate("newPolyTriangle = \n", toString(term/denom))) else null;
-        Znum = Znum + term;
+        Znum = Znum + volumeFactor * ((transpose(s)*adjQ*s)_(0,0) + sum(W, w -> (transpose(w)*adjQ*w)_(0,0)));
     );
-    Zpoly = Znum / denom;
+    Zpoly = Znum / (2^(d+2) * (d+2)! * detQ^2);
     return Zpoly
 );

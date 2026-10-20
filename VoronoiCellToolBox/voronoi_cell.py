@@ -302,7 +302,7 @@ def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, ve
         neighborVectors (list(vector)): The list of neighbor vectors.
         isolatedVector (vector): The isolated vector.
         d (int): The dimension of the matrix.
-        verbose (bool): Whether to print verbose output.
+        verbose (bool): ignored; kept for compatibility.
 
     Returns:
         list: The coefficients of the inequality on the matrix coefficients
@@ -315,27 +315,18 @@ def eq_of_wall(neighborVectors: list[vector], isolatedVector: vector, d: int, ve
         [2, 2, 2, 0, 0, 0]
 
     """
-    if verbose:
-        print(neighborVectors, isolatedVector, d)
     Tinv = Matrix(neighborVectors).inverse()
     inequalityCoefficients = [0]*(d*(d+1)//2)
     for i in range(0, d):
         for j in range(0, d):
             inequalityCoefficients[FromMatrixPositionToListPosition(i, j, d)] += isolatedVector[i]*isolatedVector[j]
-            if(verbose):
-                print(isolatedVector[i]*isolatedVector[j], " - > (", i, ", ", j, ")")
-    if(verbose): 
-        print(Tinv)
     for i in range(0, d):
         for j in range(0, d):
             for k in range(0, d):
                 for l in range(0, d):
                     inequalityCoefficients[FromMatrixPositionToListPosition(k, l, d)] -= isolatedVector[i]*Tinv[i][j]*neighborVectors[j][k]*neighborVectors[j][l]
-                    if ( verbose): 
-                        print( isolatedVector[i]*Tinv[i][j]*neighborVectors[j][k]*neighborVectors[j][l], " -> (", k,", ", l,")")
-                        print(" (", i, " , ", j, ", ", k ,", ", l, ") - ", isolatedVector[i], ", ", Tinv[i][j], ", ", neighborVectors[j][k], ", ", neighborVectors[j][l], " -> (", k, ", ", l, ") ")
-    return inequalityCoefficients #do not include b becuase it's homogeneous and b is always 0
-#\sum a_{i, j} * q_{i, j} <= 0 for newv to NOT be relevant   
+    # homogeneous, so there is no constant term: sum a_ij q_ij <= 0 when isolatedVector is not relevant
+    return inequalityCoefficients
 
 def lcmReduce(v):
     r"""
@@ -657,7 +648,6 @@ def pulling_triangulation(P):
         sage: len(pulling_triangulation(voronoi_cell([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]])))
         34
     """
-    #print(P.vertices())
     if(dimension(P) < 2):
         return [list(P.vertices())]
     # Pull the first vertex, so that the triangulation (and everything built on it) is reproducible
@@ -816,23 +806,14 @@ def VertexFromRelevantVectors(B, Q, verbose = False):
 
     # Compute b_Q: Q-norms of each column of B
     b_Q = Matrix([[Qform(B_matrix.column(i), Q_matrix)] for i in range(d)])
-    if verbose:
-        print(f"b_Q = \n{b_Q}")
 
     # Compute (B^T)^{-1} * b_Q
     B_T_inv = B_matrix.transpose().inverse()
     intermediate = B_T_inv * b_Q
-    if verbose:
-        print(f" B transpose inverse = \n{B_T_inv}")
-        print(f"intermediate = bt inv * bq \n{intermediate}")
 
     # Compute Q^{-1} * intermediate
     Q_inv = Q_matrix.inverse()
     result = Q_inv * intermediate
-    if verbose:
-        print(f" Q inverse = {Q_inv}")
-        print(f"result before scaling = {result}")
-        print(f"result after scaling = {[result[i,0]/2 for i in range(d)]}")
 
     return vector( [result[i,0]/2 for i in range(d)] )
 
@@ -870,9 +851,6 @@ def smMatrixSimplex(Q, verbose = False, **rangeorlist):
         raise Exception("A range or list of potential relevant vectors needs to be given.")
 
     pt = pulling_triangulation(VC)
-    if verbose:
-        for index, triangle in enumerate(pt):
-            print(f"triangles[{index}] = {triangle}")
     total = 0
     d = len(Q)
     detQ = numpy.linalg.det(numpy.array(Q))
@@ -891,8 +869,6 @@ def smMatrixSimplex(Q, verbose = False, **rangeorlist):
         # Compute the second moment contribution: det(T) / (sqrt(det Q) * (d+2)!) * (||(d+1)*s||_Q^2 + sum ||v_i||_Q^2)
         partial_total = Qform((d+1)*s_hat, Q) + sum([Qform(v, Q) for v in triangle])
         total += detT * partial_total
-        if verbose:
-            print(f"partial_total = {partial_total}")
 
     return total / (math.sqrt(detQ) * dp2fact)
 

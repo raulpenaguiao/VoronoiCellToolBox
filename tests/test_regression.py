@@ -56,15 +56,26 @@ class TestAnyChamber(unittest.TestCase):
 
 
 class TestVerboseModes(unittest.TestCase):
-    """The verbose flags must not change the returned polynomial."""
+    """The old verbose flags are still accepted, with a deprecation warning, and change nothing;
+    debug_m2 prints the raw Macaulay2 output."""
 
     def test_verbose_flags_return_same_polynomial(self):
         Q = [[2, -1], [-1, 2]]
         plain = normalizedChamberSecondMomentPolynomial(Q)
         for flag in ["verboseComputationProgress", "verboseSecondMoments", "verboseVertex"]:
-            with self.subTest(flag=flag), contextlib.redirect_stdout(io.StringIO()) as out:
+            with self.subTest(flag=flag), self.assertWarns(DeprecationWarning):
                 self.assertEqual(normalizedChamberSecondMomentPolynomial(Q, **{flag: True}), plain)
-                self.assertTrue(out.getvalue())
+
+    def test_debug_m2_prints_raw_output(self):
+        Q = [[2, -1], [-1, 2]]
+        with contextlib.redirect_stdout(io.StringIO()) as out:
+            self.assertEqual(normalizedChamberSecondMomentPolynomial(Q, debug_m2=True),
+                             normalizedChamberSecondMomentPolynomial(Q))
+        self.assertIn("Raw Macaulay2 output", out.getvalue())
+
+    def test_unknown_keyword_raises(self):
+        with self.assertRaises(TypeError):
+            normalizedChamberSecondMomentPolynomial([[2, -1], [-1, 2]], verbos=True)
 
 
 if __name__ == "__main__":

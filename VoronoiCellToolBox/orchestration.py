@@ -1,5 +1,5 @@
 import re
-import subprocess
+import warnings
 from importlib.resources import files
 from numbers import Integral as numbersIntegral
 from sage.all import PolynomialRing, QQ
@@ -29,19 +29,12 @@ FUNCTION_DEPENDENCIES = {
     "symMatricesRing": [],
 }
 
-def load_m2_template(template_name="templatecomputation.m2"):
-    """
-    Load the templatecomputation.m2 file from your package
-    """
+def load_m2_template(file_name):
+    """Return the text of a Macaulay2 file shipped with the package."""
     try:
-        template_content = files("VoronoiCellToolBox") \
-            .joinpath(template_name) \
-            .read_text()
-
-        return template_content
+        return files("VoronoiCellToolBox").joinpath(file_name).read_text()
     except Exception as e:
-        print(f"Error loading resource: {e}")
-        raise FileNotFoundError(f"Could not find {template_name} in package")
+        raise FileNotFoundError(f"Could not find {file_name} in package") from e
 
 
 def load_m2_function_with_dependencies(function_name):
@@ -120,33 +113,45 @@ toString barycentre({{VECTORS}}, {{DIMENSION}})
 
     return result
 
-def normalizedChamberSecondMomentPolynomialResult(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False, debug_m2=False):
-    """
-    Execute a Sage computation and pass results to Macaulay2.
-
-    Parameters:
-    -----------
-    Q : matrix
-    debug_m2 : bool
-        Print the full raw Macaulay2 output before any processing.
-
-    Returns:
-    --------
-    the polynomial string with logs and debug info
-    """
-    result, _ = _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2)
-    return result
+_VERBOSE_FLAGS = ("verboseComputationProgress", "verboseSecondMoments", "verboseVertex")
 
 
-def _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2):
+def _ignore_verbose_flags(flags):
+    """The old verbose flags printed Macaulay2 expressions for helpers that are not part of the
+    package. They are accepted, and ignored, so that old calls keep working."""
+    unknown = set(flags) - set(_VERBOSE_FLAGS)
+    if unknown:
+        raise TypeError(f"unexpected keyword arguments: {', '.join(sorted(unknown))}")
+    if any(flags.values()):
+        warnings.warn("the verbose flags of normalizedChamberSecondMomentPolynomial have no effect "
+                      "any more; use debug_m2=True to see the raw Macaulay2 output",
+                      DeprecationWarning, stacklevel=3)
+
+
+def normalizedChamberSecondMomentPolynomial(Q, debug_m2=False, **verbose_flags):
+    r"""
+    Return the second moment on the secondary cone of `Q` as a string: a rational function of
+    the upper-triangular entries ``q_0, q_1, ...`` of the metric, computed in Macaulay2. This is
+    the engine of :func:`chamber_second_moment`, which returns the same function as an element of
+    :func:`chamber_ring` and should be preferred.
+
+    The triangulation is computed with the candidates `\{-2..2\}^d`. If they miss relevant
+    vectors of `Q`, the LLL-reduced metric `Q_r = U^T Q U` is used instead, and `U^T Q U` is
+    substituted back in Macaulay2, so that the result is a function of the entries of `Q` itself.
+
+    INPUT:
+
+    - ``Q`` -- a positive definite symmetric matrix
+    - ``debug_m2`` -- (default: ``False``) print the raw Macaulay2 output
+
+    EXAMPLES::
+
+        sage: from VoronoiCellToolBox import normalizedChamberSecondMomentPolynomial
+        sage: normalizedChamberSecondMomentPolynomial([[2, -1], [-1, 2]])
+        '(2*q_0*q_1^2+2*q_1^3-q_0^2*q_2+2*q_1^2*q_2-q_0*q_2^2)/(12*q_1^2-12*q_0*q_2)'
     """
-    Run SmPoly in Macaulay2 and return (polynomial string, full raw M2 output).
-    The raw output is needed by the verbose modes, which print sections of it.
-    """
-    # Step 1: Run Sage computation
-    # The triangulation is computed with range=2 candidate relevant vectors. If that misses
-    # some relevant vectors of Q, work with the LLL-reduced metric Qr = U^T Q U instead and
-    # substitute back in Macaulay2: SM_Q = SM_Qr(U^T Q U) on the whole chamber of Q.
+    _ignore_verbose_flags(verbose_flags)
+    Q = _rows(Q)
     U = None
     try:
         VCell(Q, range=2)
@@ -154,98 +159,38 @@ def _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, v
         if "relevant vector list not complete" not in str(e):
             raise
         Q, U = reduce_metric(Q)
-    sage_string = FormatPullingTrigMatrix(Q)
-    matrix_m2 = macaulifyMatrix(Q)
 
-    # Step 2: Load SmPoly function with all its dependencies
-    m2_input_string = load_m2_function_with_dependencies("SmPoly")
-
-    secondMomentCode = """
-mat = {{SAGESTRING}};
-metric_matrix = {{SAGESTRING2}};
+    code = load_m2_function_with_dependencies("SmPoly") + """
+mat = %s;
+metric_matrix = %s;
 d = numrows (mat_0)_0;
-Zpoly = SmPoly(d, mat, metric_matrix, {{verboseComputationProgress}}, {{verboseSecondMoments}}, {{verboseVertecExpressions}});
-{{BASISCHANGE}}toString Zpoly
-"""
-    basisChangeCode = ""
+Zpoly = SmPoly(d, mat, metric_matrix);
+""" % (FormatPullingTrigMatrix(Q).replace("\n", ""), macaulifyMatrix(Q))
     if U is not None:
-        basisChangeCode = """
-Ured = sub({{UMATRIX}}, R);
+        code += """
+Ured = sub(%s, R);
 Qback = transpose(Ured) * genericSymmetricMatrix(R, q_0, d) * Ured;
 substitutions = apply(numgens R, k -> R_k => (Listify(Qback, d))_k);
 Zpoly = sub(numerator Zpoly, substitutions) / sub(denominator Zpoly, substitutions);
-""".replace("{{UMATRIX}}", macaulifyMatrix([list(row) for row in U.rows()]))
-    secondMomentCode = secondMomentCode.replace("{{BASISCHANGE}}", basisChangeCode)
+""" % macaulifyMatrix([list(row) for row in U.rows()])
+    code += "toString Zpoly\n"
 
-    # Parse m2 for this function
-    m2_input_string += secondMomentCode
-    m2_input_string = m2_input_string.replace("{{SAGESTRING}};", sage_string.replace("\n", "") + ";")
-    m2_input_string = m2_input_string.replace("{{SAGESTRING2}}", matrix_m2)
-    if verboseComputationProgress:
-        m2_input_string = m2_input_string.replace("{{verboseComputationProgress}}", "true")
-    else:
-        m2_input_string = m2_input_string.replace("{{verboseComputationProgress}}", "false")
-
-    if verboseSecondMoments:
-        m2_input_string = m2_input_string.replace("{{verboseSecondMoments}}", "true")
-    else:
-        m2_input_string = m2_input_string.replace("{{verboseSecondMoments}}", "false")
-
-    if verboseVertex:
-        m2_input_string = m2_input_string.replace("{{verboseVertecExpressions}}", "true")
-    else:
-        m2_input_string = m2_input_string.replace("{{verboseVertecExpressions}}", "false")
-
-    # Step 3: Run Macaulay2
-    raw_result = macaulay2.eval(m2_input_string)
-
-    # C: debug flag — show raw output before any processing
+    raw = macaulay2.eval(code)
     if debug_m2:
-        print("=== Raw Macaulay2 output ===\n" + raw_result + "\n============================")
-
-    # A: detect known M2 fatal-error markers
-    if "--back trace--" in raw_result:
-        raise RuntimeError(f"Macaulay2 computation failed (back trace):\n{raw_result}")
-
-    result = raw_result.split('\n')[-1].strip()
-    # When M2 printed anything, the last line carries an output label: "oo1000000018 = (...)/(...)"
-    result = _M2_OUTPUT_LABEL_RE.sub('', result)
-
-    # B: validate output looks like a rational function in q_N variables
-    if result and not _M2_POLYNOMIAL_RE.fullmatch(result):
-        raise RuntimeError(
-            f"Macaulay2 output does not look like a polynomial/rational function: {result!r}\n"
-            f"Full output:\n{raw_result}"
-        )
-
-    return result, raw_result
+        print("=== Raw Macaulay2 output ===\n" + raw + "\n============================")
+    if "--back trace--" in raw:
+        raise RuntimeError(f"Macaulay2 computation failed (back trace):\n{raw}")
+    # the last line holds the result, possibly after an output label "oo12 = "
+    result = _M2_OUTPUT_LABEL_RE.sub('', raw.split('\n')[-1].strip())
+    if not _M2_POLYNOMIAL_RE.fullmatch(result):
+        raise RuntimeError(f"Macaulay2 output does not look like a rational function: {result!r}\n"
+                           f"Full output:\n{raw}")
+    return result
 
 
-def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False, debug_m2=False):
-    Q = _rows(Q)
-    result, raw_result = _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2)
-    if verboseComputationProgress:
-        print("Debug computation progress: result = " + str(result))
-    elif verboseSecondMoments:
-        lines = raw_result.splitlines()
-        secondMoment = []
-        for i, line in enumerate(lines):
-            if "newPolyTriangle = " in line and i + 1 < len(lines):
-                secondMoment.append(f' sm{i} = "' + lines[i + 1] + '"')
-                secondMoment.append(f'print(rpl(sm{i}, {Q}))')
-        print("Debug second moment expressions: \n " + "\n".join(secondMoment))
-    elif verboseVertex:
-        #find all instances of "concatVertices = " and print the line after it
-        lines = raw_result.splitlines()
-        vertexCoordinates = []
-        for i, line in enumerate(lines):
-            if "concatVertices = " in line and i + 1 < len(lines):
-                vertexCoordinates.append(f' smtriang{i} = "' + lines[i + 1] + '"')
-                vertexCoordinates.append(f'print(rpl(m2_matrix_to_sage(smtriang{i}), {Q}))')
-        print("Debug vertex expressions: \n " + "\n".join(vertexCoordinates))
-    if '=' in result:
-        result = result.split('=')[-1].strip()
-    return result  # return only the last line which contains the polynomial
+def normalizedChamberSecondMomentPolynomialResult(Q, debug_m2=False, **verbose_flags):
+    """Deprecated alias of :func:`normalizedChamberSecondMomentPolynomial`."""
+    return normalizedChamberSecondMomentPolynomial(Q, debug_m2=debug_m2, **verbose_flags)
 
 
 def chamber_ring(d):
