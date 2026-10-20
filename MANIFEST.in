@@ -3,3 +3,4 @@ recursive-include VoronoiCellToolBox *.m2
 recursive-include tests *.py
 global-exclude *-checkpoint*
 prune */.ipynb_checkpoints
+include CITATION.cff

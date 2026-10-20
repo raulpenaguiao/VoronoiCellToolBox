@@ -1,0 +1,19 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "VoronoiCellToolBox: Voronoi cells, secondary cones and exact chamber-wise second moments of lattices"
+type: software
+authors:
+  - family-names: Mandelshtam
+    given-names: Yelena
+  - family-names: Penaguiao
+    given-names: Raul
+version: 2.1.0
+license: GPL-3.0-or-later
+repository-code: "https://github.com/raulpenaguiao/VoronoiCellToolBox"
+keywords:
+  - lattice quantizer
+  - Voronoi cell
+  - secondary cone
+  - second moment
+  - SageMath
+  - Macaulay2

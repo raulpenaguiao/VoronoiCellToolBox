@@ -52,6 +52,7 @@ from VoronoiCellToolBox.graph_lattice import (
 )
 
 __version__ = "2.1.0"
+__author__ = "Yelena Mandelshtam, Raul Penaguiao"
 
 __all__ = [
     "voronoi_cell",

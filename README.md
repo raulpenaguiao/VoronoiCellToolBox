@@ -83,4 +83,4 @@ The regression tests compare against an independent implementation of the second
 
 ## Authors and license
 
-Yelena Mandelshtam and Raul Penaguiao. Released under the GNU General Public License, version 3 or later (see `LICENSE`).
+Yelena Mandelshtam and Raul Penaguiao. Released under the GNU General Public License, version 3 or later (see `LICENSE`). To cite the package, see `CITATION.cff`.
