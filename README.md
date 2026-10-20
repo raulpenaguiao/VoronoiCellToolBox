@@ -13,7 +13,7 @@ Metrics in any chamber are accepted: they are LLL-reduced internally and the res
 
 ## Installation
 
-Requirements: SageMath (tested with 10.6) and Macaulay2 (tested with 1.22), with the `M2` executable on the `PATH`. Then
+Requirements: SageMath (tested with 10.6 and 10.10) and Macaulay2 (tested with 1.22), with the `M2` executable on the `PATH`. Then
 
     sage -pip install git+https://github.com/raulpenaguiao/VoronoiCellToolBox
 

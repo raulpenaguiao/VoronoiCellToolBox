@@ -9,11 +9,11 @@ jobs:
   test:
     runs-on: ubuntu-latest
     container:
-      image: sagemath/sagemath:10.6
+      image: sagemath/sagemath:10.10
       options: --user root
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Install Macaulay2
         run: |
@@ -38,7 +38,7 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: actions/setup-python@v5
         with:
