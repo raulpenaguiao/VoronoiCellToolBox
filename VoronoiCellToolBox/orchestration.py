@@ -2,10 +2,11 @@ import re
 import subprocess
 from importlib.resources import files
 from numbers import Integral as numbersIntegral
-from sage.all import PolynomialRing, QQ, sage_eval
+from sage.all import PolynomialRing, QQ
+from sage.misc.parser import Parser
 from sage.interfaces.macaulay2 import macaulay2
 from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
-from VoronoiCellToolBox.voronoi_cell import VCell, reduce_metric, is_generic
+from VoronoiCellToolBox.voronoi_cell import VCell, reduce_metric, is_generic, _rows
 
 _M2_POLYNOMIAL_RE = re.compile(r'^[-+*/^()\d\sq_]+$')
 _M2_OUTPUT_LABEL_RE = re.compile(r'^oo\d+\s*=\s*')
@@ -221,6 +222,7 @@ Zpoly = sub(numerator Zpoly, substitutions) / sub(denominator Zpoly, substitutio
 
 
 def normalizedChamberSecondMomentPolynomial(Q, verboseComputationProgress=False, verboseSecondMoments=False, verboseVertex=False, debug_m2=False):
+    Q = _rows(Q)
     result, raw_result = _normalizedChamberSecondMomentPolynomialRaw(Q, verboseComputationProgress, verboseSecondMoments, verboseVertex, debug_m2)
     if verboseComputationProgress:
         print("Debug computation progress: result = " + str(result))
@@ -313,11 +315,13 @@ def chamber_second_moment(Q, allow_nongeneric=False):
         ...
         ValueError: Q is not generic (it lies on a wall between chambers); pass allow_nongeneric=True for the formula on that face
     """
+    Q = _rows(Q)
     if not allow_nongeneric and not is_generic(Q):
         raise ValueError("Q is not generic (it lies on a wall between chambers); pass allow_nongeneric=True for the formula on that face")
     R = chamber_ring(len(Q))
     result = normalizedChamberSecondMomentPolynomial(Q)
-    return R(sage_eval(result, locals={str(g): g for g in R.gens()}))
+    # Sage's parser, not sage_eval: Python's compiler overflows its stack on long sums
+    return R(Parser(make_var={str(g): g for g in R.gens()}).parse(result))
 
 
 

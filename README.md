@@ -49,6 +49,29 @@ The notebook [`demo.ipynb`](demo.ipynb) goes from dimension 2 to the three chamb
 | `plot_voronoi_cell(Q)` | a picture in dimension 2 or 3 |
 | `reduce_metric(Q)` | the LLL-reduced metric `U^T Q U` and `U` |
 
+### Graph lattices
+
+For a connected Sage `Graph` `G` (multiple edges and loops allowed) with edge lengths `L`, in the order of `graph_edges(G)`:
+
+| Function | Returns |
+|---|---|
+| `riemann_matrix(G, L)`, `cycle_basis_matrix(G)` | the Gram matrix `B diag(L) B^T` of the cycle lattice `H_1(G, Z)`; the cycle basis `B` |
+| `simple_cycles(G)`, `graph_relevant_vectors(G)` | the simple cycles; their coordinates, which are the relevant vectors (Bacher–de la Harpe–Nagnibeda) |
+| `graph_face_counts(G)` | the f-vector of the cell, from strongly connected orientations of subgraphs (Amini) |
+| `tropical_moment(G, L)` | the tropical moment `I(Jac G) = SM(riemann_matrix(G, L))` by de Jong–Shokrieh's Theorem A, without computing a cell |
+| `graph_second_moment_function(G)` | `SM` as a rational function of the edge lengths, by the chamber pipeline |
+
+```sage
+sage: K4 = graphs.CompleteGraph(4)
+sage: Q = riemann_matrix(K4, [1, 2, 3, 4, 5, 6])
+sage: sorted(graph_relevant_vectors(K4)) == sorted(relevant_vectors(Q))
+True
+sage: graph_face_counts(K4) == voronoi_cell(Q).f_vector()
+True
+sage: tropical_moment(K4, [1, 2, 3, 4, 5, 6]) == second_moment(Q)
+True
+```
+
 Every function has a docstring with examples. Older names (`VCell`, `normalizedChamberSecondMomentPolynomial`, ...) still work.
 
 ## Tests
@@ -56,7 +79,7 @@ Every function has a docstring with examples. Older names (`VCell`, `normalizedC
     make test       # unit and regression tests: sage -python -m pytest tests -v (about a minute)
     make doctest    # the docstring examples: sage -t --long VoronoiCellToolBox/
 
-The regression tests compare against an independent implementation of the second moment (`tests/independent_checker.py`), against the secondary cones of the three Delone triangulations in dimension 4 from Zimmermann's thesis, and against the known values `G(A_4^*) ≈ 0.077559` and `G(D_4) ≈ 0.0766032346`.
+The regression tests compare against an independent implementation of the second moment (`tests/independent_checker.py`), against the secondary cones of the three Delone triangulations in dimension 4 from Zimmermann's thesis, against the known values `G(A_4^*) ≈ 0.077559` and `G(D_4) ≈ 0.0766032346`, and on graph lattices, against the relevant vectors and f-vectors predicted by the graph and against de Jong–Shokrieh's formula for the second moment (`tests/test_graph.py`).
 
 ## Authors and license
 

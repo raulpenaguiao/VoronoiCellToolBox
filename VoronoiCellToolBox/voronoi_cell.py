@@ -37,6 +37,11 @@ from sage.all import Polyhedron, vector, dimension, Matrix, Rational, QQ, ZZ, SR
 from sage.arith.functions import LCM_list
 
 
+def _rows(Q):
+    """The metric as a list of rows, so that a Sage matrix and a list of lists are accepted alike."""
+    return [list(row) for row in Q.rows()] if hasattr(Q, "rows") else Q
+
+
 def _candidates(d, rangeorlist, default_range=None):
     r"""
     The list of candidate relevant vectors given by ``range=r`` (all of `\{-r..r\}^d \setminus 0`)
@@ -97,6 +102,7 @@ def VCell(Q, **rangeorlist):
         ...
         Exception: relevant vector list not complete
     """
+    Q = _rows(Q)
     M = Matrix(QQ, Q)
     if not M.is_symmetric():
         raise ValueError(f"Matrix {Q} is not symmetric.")
@@ -145,6 +151,7 @@ def reduce_metric(Q):
         [-1  1]
         [ 1 -2]
     """
+    Q = _rows(Q)
     U = Matrix(QQ, Q).LLL_gram()
     Qr = U.transpose() * Matrix(QQ, Q) * U
     return [list(row) for row in Qr.rows()], U
@@ -176,6 +183,7 @@ def voronoi_cell(Q, candidate_range=None):
         sage: V.volume(), V.n_facets()
         (1, 4)
     """
+    Q = _rows(Q)
     if candidate_range is not None:
         return VCell(Q, range=candidate_range)
     Qr, U = reduce_metric(Q)
@@ -208,6 +216,7 @@ def relevant_vectors(Q):
         sage: len(relevant_vectors([[1, 0], [0, 1]]))       # the square lattice is not generic
         4
     """
+    Q = _rows(Q)
     VC = voronoi_cell(Q)
     return [tuple(relevant_vector(Q, F)) for F in VC.facets()]
 
@@ -229,6 +238,7 @@ def is_generic(Q):
         sage: is_generic([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]])
         True
     """
+    Q = _rows(Q)
     d = len(Q)
     return voronoi_cell(Q).n_facets() == 2 * (2**d - 1)
 
@@ -534,6 +544,7 @@ def secondary_cone(Q, verbose = False, **rangeorlist):
         ...
         ValueError: Q is not generic: its Voronoi cell has 4 facets, not 2(2^d - 1) = 6
     """
+    Q = _rows(Q)
     d = len(Q)
     if not rangeorlist:
         Qr, U = reduce_metric(Q)
@@ -681,6 +692,7 @@ def Delsets(VC, Q, **rangeorlist):
         sage: len(D), {P.n_vertices() for P in D.values()}     # 24 vertices, each a Delaunay simplex
         (24, {4})
     """
+    Q = _rows(Q)
     d = len(Q)
     prv = None
     if "range" in rangeorlist:
@@ -747,6 +759,7 @@ def Delset(Q, v, **rangeorlist):
         v = vertices[random.randint(0, len(vertices))]
         Delset(Q, v, range = 2)#[(0, 0, 0), (-1, 0, 1), (-1, 1, 0), (-1, 1, 1), (0, 0, 1), (0, 1, 0)]
     """
+    Q = _rows(Q)
     d = len(Q)
     prv = None
     if "range" in rangeorlist:
@@ -845,6 +858,7 @@ def smMatrixSimplex(Q, verbose = False, **rangeorlist):
         Q = [[2, -1], [-1, 2]]
         smMatrixSimplex(Q, range=2)
     """
+    Q = _rows(Q)
     VC = None
     if "range" in rangeorlist:
         r = rangeorlist["range"]
@@ -910,6 +924,7 @@ def second_moment(Q, **rangeorlist):
         sage: second_moment([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
         1/4
     """
+    Q = _rows(Q)
     VC = VCell(Q, **rangeorlist) if rangeorlist else voronoi_cell(Q)
     pt = pulling_triangulation(VC)
     total = 0
@@ -950,5 +965,6 @@ def normalized_second_moment(Q, **rangeorlist):
         sage: normalized_second_moment([[4, -1, -1, -1], [-1, 4, -1, -1], [-1, -1, 4, -1], [-1, -1, -1, 4]]).n(digits=6)  # A_4^*
         0.0775588
     """
+    Q = _rows(Q)
     d = len(Q)
     return second_moment(Q, **rangeorlist) / (d * SR(Matrix(QQ, Q).det())**(QQ(1)/d)) 

@@ -1,4 +1,4 @@
-from VoronoiCellToolBox.voronoi_cell import VCell, pulling_triangulation, relevantVectorDictionary
+from VoronoiCellToolBox.voronoi_cell import VCell, pulling_triangulation, relevantVectorDictionary, _rows
 from itertools import chain, combinations
 from sage.all import Matrix, QQ
 
@@ -42,6 +42,7 @@ def selectDIndependentVectors(vecs, d):
     return selected
 
 def FormatPullingTrigMatrix(Q):
+    Q = _rows(Q)
     d = len(Q)
     VC = VCell(Q, range = 2)
     irv = relevantVectorDictionary(VC, Q)

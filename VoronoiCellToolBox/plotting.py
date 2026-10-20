@@ -2,7 +2,7 @@ r"""
 Pictures of Voronoi cells in dimensions 2 and 3
 """
 from sage.all import Graphics, polygon, line, point
-from VoronoiCellToolBox.voronoi_cell import voronoi_cell, pulling_triangulation
+from VoronoiCellToolBox.voronoi_cell import voronoi_cell, pulling_triangulation, _rows
 
 
 def plot_voronoi_cell(Q, triangulation=False, relevant=False, **options):
@@ -28,6 +28,7 @@ def plot_voronoi_cell(Q, triangulation=False, relevant=False, **options):
         <class 'sage.plot.graphics.Graphics'>
         sage: g3 = plot_voronoi_cell([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]], triangulation=True)
     """
+    Q = _rows(Q)
     d = len(Q)
     if d not in (2, 3):
         raise ValueError("only dimensions 2 and 3 can be plotted")
