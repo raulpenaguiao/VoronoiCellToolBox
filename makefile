@@ -1,3 +1,5 @@
+comma := ,
+
 .PHONY: all install build test doctest check
 
 all: install
@@ -12,8 +14,8 @@ build:
 test:
 	sage -python -m pytest tests -v
 
-# The examples in the docstrings
+# The examples in the docstrings (those tagged "optional - macaulay2" only if M2 is installed)
 doctest:
-	sage -t --long VoronoiCellToolBox/
+	sage -t --long $(if $(shell command -v M2),--optional=sage$(comma)macaulay2) VoronoiCellToolBox/
 
 check: test doctest

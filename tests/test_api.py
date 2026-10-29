@@ -3,6 +3,7 @@
 # random metrics inside secondary cones, the d=4 chambers of Zimmermann's thesis (Section 6.4.3),
 # and the known values G(A4*) and G(D4) (Conway-Sloane, Soto).
 import random
+import shutil
 import unittest
 from sage.all import QQ, ZZ, matrix, identity_matrix, graphs
 from VoronoiCellToolBox import (
@@ -139,11 +140,41 @@ class TestChamberSecondMoment(unittest.TestCase):
         self.assertEqual(g(*metric_coordinates(wall)), QQ(23)/48)
         self.assertEqual(sm_independent(wall), QQ(23)/48)
 
+    def test_skewed_metrics(self):
+        # relevant vectors outside {-2..2}^d: the function of U^T Q0 U is computed and substituted back
+        for Q0, U in [(HEXAGONAL, matrix(ZZ, [[7, 2], [3, 1]])), (A3STAR, matrix(ZZ, [[1, 3, 0], [0, 1, 0], [2, 6, 1]]))]:
+            Q = [list(row) for row in U.transpose() * matrix(QQ, Q0) * U]
+            f = chamber_second_moment(Q)
+            self.assertEqual(f(*metric_coordinates(Q)), second_moment(Q0))
+            Qp = random_interior_point(Q, random.Random(3))
+            self.assertEqual(f(*metric_coordinates(Qp)), second_moment(Qp))
+
     def test_nongeneric_raises(self):
         with self.assertRaises(ValueError):
             chamber_second_moment([[1, 0], [0, 1]])
         with self.assertRaises(ValueError):
+            chamber_second_moment(HEXAGONAL, backend="maple")
+        with self.assertRaises(ValueError):
             secondary_cone([[2, -1, -1], [-1, 3, -1], [-1, -1, 3]])
+
+
+@unittest.skipIf(shutil.which("M2") is None, "Macaulay2 is not installed")
+class TestBackends(unittest.TestCase):
+    """The Sage and Macaulay2 backends return the same function, written the same way."""
+
+    def test_same_function(self):
+        U = matrix(ZZ, [[1, 4, 0], [0, 1, 3], [0, 0, 1]])
+        skewed = [list(row) for row in U.transpose() * matrix(QQ, A3STAR) * U]   # LLL-reduced internally
+        for Q in [HEXAGONAL, A3STAR, A3STAR_NEIGHBOUR, skewed, D4_CHAMBERS["Delta1"][0]]:
+            with self.subTest(Q=Q):
+                f, g = chamber_second_moment(Q), chamber_second_moment(Q, backend="m2")
+                self.assertEqual(f, g)
+                self.assertEqual(str(f), str(g))
+
+    def test_nongeneric_face(self):
+        Q = [[2, -1, -1], [-1, 3, -1], [-1, -1, 3]]          # on the wall between two chambers
+        self.assertEqual(chamber_second_moment(Q, allow_nongeneric=True),
+                         chamber_second_moment(Q, allow_nongeneric=True, backend="m2"))
 
 
 class TestDimension4(unittest.TestCase):

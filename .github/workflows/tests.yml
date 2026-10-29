@@ -6,6 +6,12 @@ on:
 
 jobs:
   test:
+    # with Macaulay2: both backends; without: the default Sage backend alone, as most users run it
+    name: test (${{ matrix.macaulay2 && 'Sage + Macaulay2' || 'Sage only' }})
+    strategy:
+      fail-fast: false
+      matrix:
+        macaulay2: [true, false]
     runs-on: ubuntu-latest
     container:
       image: sagemath/sagemath:10.10
@@ -15,6 +21,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Install Macaulay2
+        if: matrix.macaulay2
         run: |
           apt-get update
           apt-get install -y macaulay2
@@ -28,4 +35,4 @@ jobs:
         run: sage -python -m pytest tests/ -v
 
       - name: Run doctests
-        run: sage -t --long VoronoiCellToolBox/
+        run: sage -t --long ${{ matrix.macaulay2 && '--optional=sage,macaulay2' || '' }} VoronoiCellToolBox/

@@ -8,6 +8,7 @@ Public API (snake_case):
 - :func:`secondary_cone`, :func:`rayify`, :func:`matrixify`
 - :func:`pulling_triangulation`, :func:`second_moment`, :func:`normalized_second_moment`
 - :func:`chamber_second_moment`, :func:`chamber_ring`, :func:`metric_coordinates`
+  (``backend="sage"``, the default, or ``backend="m2"`` for Macaulay2)
 - :func:`plot_voronoi_cell`
 - graph lattices: :func:`riemann_matrix`, :func:`cycle_basis_matrix`, :func:`simple_cycles`,
   :func:`graph_relevant_vectors`, :func:`graph_face_counts`, :func:`tropical_moment`, :func:`graph_second_moment_function`
@@ -51,7 +52,7 @@ from VoronoiCellToolBox.graph_lattice import (
     graph_second_moment_function,
 )
 
-__version__ = "2.1.0"
+__version__ = "2.2.0"
 __author__ = "Yelena Mandelshtam, Raul Penaguiao"
 
 __all__ = [

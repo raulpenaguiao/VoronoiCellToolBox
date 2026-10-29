@@ -344,7 +344,7 @@ def _monic_denominator(f):
     return f.parent()(f.numerator() / c) / f.parent()(f.denominator() / c)
 
 
-def graph_second_moment_function(G, cycle_basis=None):
+def graph_second_moment_function(G, cycle_basis=None, backend="sage"):
     r"""
     Return the second moment of the Voronoi cell of `H_1(G, \ZZ)` as a rational function of
     the edge lengths, computed by the chamber pipeline (:func:`chamber_second_moment`) and
@@ -354,6 +354,8 @@ def graph_second_moment_function(G, cycle_basis=None):
     that does not depend on the lengths. The face formula is computed at unit lengths and is
     valid for all positive lengths. It agrees with de Jong and Shokrieh's formula
     (:func:`tropical_moment`) as a rational function.
+
+    ``backend`` is passed to :func:`chamber_second_moment` (``"sage"`` or ``"m2"``).
 
     OUTPUT: an element of the fraction field of `\QQ[\ell_0, \dots, \ell_{|E|-1}]`
 
@@ -370,7 +372,7 @@ def graph_second_moment_function(G, cycle_basis=None):
     B = cycle_basis_matrix(G) if cycle_basis is None else matrix(ZZ, cycle_basis)
     ring = PolynomialRing(QQ, ['l_%d' % k for k in range(B.ncols())])
     Q1 = riemann_matrix(G, cycle_basis=B)
-    f = chamber_second_moment(Q1, allow_nongeneric=True)
+    f = chamber_second_moment(Q1, allow_nongeneric=True, backend=backend)
     Ql = riemann_matrix(G, ring.gens(), cycle_basis=B)
     g = Ql.nrows()
     point = [Ql[i, k] for i in range(g) for k in range(i, g)]   # as in metric_coordinates

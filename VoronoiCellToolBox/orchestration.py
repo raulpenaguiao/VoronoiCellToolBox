@@ -1,12 +1,14 @@
 import re
+import shutil
 import warnings
 from importlib.resources import files
 from numbers import Integral as numbersIntegral
-from sage.all import PolynomialRing, QQ
+from sage.all import PolynomialRing, QQ, matrix, vector, factorial, gcd, lcm
 from sage.misc.parser import Parser
 from sage.interfaces.macaulay2 import macaulay2
-from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix
-from VoronoiCellToolBox.voronoi_cell import VCell, reduce_metric, is_generic, _rows
+from VoronoiCellToolBox.macaulay_parsing import FormatPullingTrigMatrix, macaulifyMatrix, selectDIndependentVectors
+from VoronoiCellToolBox.voronoi_cell import (VCell, reduce_metric, is_generic, relevantVectorDictionary,
+                                             pulling_triangulation, _rows)
 
 _M2_POLYNOMIAL_RE = re.compile(r'^[-+*/^()\d\sq_]+$')
 _M2_OUTPUT_LABEL_RE = re.compile(r'^oo\d+\s*=\s*')
@@ -128,6 +130,59 @@ def _ignore_verbose_flags(flags):
                       DeprecationWarning, stacklevel=3)
 
 
+def _triangulable_metric(Q):
+    r"""Return ``(Q, None)`` if the candidates `\{-2..2\}^d` find all relevant vectors of `Q`,
+    and ``(U^T Q U, U)`` with the LLL-reduced metric otherwise."""
+    try:
+        VCell(Q, range=2)
+    except Exception as e:
+        if "relevant vector list not complete" not in str(e):
+            raise
+        return reduce_metric(Q)
+    return Q, None
+
+
+def _require_m2():
+    if shutil.which("M2") is None:
+        raise RuntimeError("the Macaulay2 backend needs the M2 executable on the PATH "
+                           "(https://macaulay2.com); the default backend='sage' does not")
+
+
+def _sage_chamber_function(Q):
+    r"""
+    The chamber second moment of `Q` (whose relevant vectors lie in `\{-2..2\}^d`), computed in
+    Sage's polynomial rings over `\QQ`; the same algorithm as ``function_SmPoly.m2``.
+
+    Each vertex of the cell is `\operatorname{adj}(Q) w / (2 \det Q)` with `w = B^{-T} b_Q`,
+    where the columns of `B` are `d` relevant vectors through it and `b_Q` holds their norms.
+    The numerators of all simplices are summed over the shared denominator, which is divided
+    out once at the end.
+    """
+    d = len(Q)
+    R = chamber_ring(d).ring()
+    gens = iter(R.gens())
+    upper = {(i, j): next(gens) for i in range(d) for j in range(i, d)}
+    Qs = matrix(R, d, d, lambda i, j: upper[min(i, j), max(i, j)])
+    adjQ = Qs.adjugate()
+    at = metric_coordinates(Q)
+    VC = VCell(Q, range=2)
+    irv = relevantVectorDictionary(VC, Q)
+    w_of_vertex = {}
+    for v, vecs in irv.items():
+        B = matrix(QQ, selectDIndependentVectors(vecs, d)).transpose()
+        norms = vector(R, [B.column(i) * Qs * B.column(i) for i in range(d)])
+        w_of_vertex[v] = B.transpose().inverse().change_ring(R) * norms
+    numerator = R(0)
+    for simplex in pulling_triangulation(VC):
+        W = [w_of_vertex[v] for v in simplex]
+        s = sum(W)
+        volume = matrix(R, [w - W[0] for w in W[1:]]).det()
+        if volume(*at) < 0:
+            volume = -volume
+        numerator += volume * (s * adjQ * s + sum(w * adjQ * w for w in W))
+    return numerator / (2**(d+2) * factorial(d+2) * Qs.det()**2)
+
+
 def normalizedChamberSecondMomentPolynomial(Q, debug_m2=False, **verbose_flags):
     r"""
     Return the second moment on the secondary cone of `Q` as a string: a rational function of
@@ -147,18 +202,12 @@ def normalizedChamberSecondMomentPolynomial(Q, debug_m2=False, **verbose_flags):
     EXAMPLES::
 
         sage: from VoronoiCellToolBox import normalizedChamberSecondMomentPolynomial
-        sage: normalizedChamberSecondMomentPolynomial([[2, -1], [-1, 2]])
+        sage: normalizedChamberSecondMomentPolynomial([[2, -1], [-1, 2]])   # optional - macaulay2
         '(2*q_0*q_1^2+2*q_1^3-q_0^2*q_2+2*q_1^2*q_2-q_0*q_2^2)/(12*q_1^2-12*q_0*q_2)'
     """
     _ignore_verbose_flags(verbose_flags)
-    Q = _rows(Q)
-    U = None
-    try:
-        VCell(Q, range=2)
-    except Exception as e:
-        if "relevant vector list not complete" not in str(e):
-            raise
-        Q, U = reduce_metric(Q)
+    _require_m2()
+    Q, U = _triangulable_metric(_rows(Q))
 
     code = load_m2_function_with_dependencies("SmPoly") + """
 mat = %s;
@@ -220,11 +269,15 @@ def metric_coordinates(Q):
         sage: metric_coordinates([[2, -1], [-1, 3]])
         [2, -1, 3]
     """
+    Q = _rows(Q)
     d = len(Q)
     return [QQ(Q[i][j]) for i in range(d) for j in range(i, d)]
 
 
-def chamber_second_moment(Q, allow_nongeneric=False):
+_BACKENDS = {"sage": "sage", "m2": "m2", "macaulay2": "m2"}
+
+
+def chamber_second_moment(Q, allow_nongeneric=False, backend="sage"):
     r"""
     Return the second moment on the whole secondary cone of `Q`, as a rational function of
     the entries of the metric.
@@ -232,9 +285,8 @@ def chamber_second_moment(Q, allow_nongeneric=False):
     For every `Q'` in the secondary cone of `Q` (:func:`secondary_cone`), the second moment
     ``second_moment(Q')`` equals ``f(*metric_coordinates(Q'))``, where ``f`` is the output.
     The vertices of the Voronoi cell are rational functions of `Q'` on the cone, so the
-    integral over a fixed triangulation is one too; the symbolic integration runs in
-    Macaulay2. Metrics with relevant vectors outside `\{-2..2\}^d` are LLL-reduced first and
-    the result is substituted back.
+    integral over a fixed triangulation is one too. Metrics with relevant vectors outside
+    `\{-2..2\}^d` are LLL-reduced first and the result is substituted back.
 
     The normalized second moment on the cone is ``f / (d * det(Q')^(1/d))``.
 
@@ -244,6 +296,10 @@ def chamber_second_moment(Q, allow_nongeneric=False):
     - ``allow_nongeneric`` -- (default: ``False``) a non-generic `Q` lies on a wall between
       chambers, and its formula is only valid on that face. By default a ``ValueError`` is
       raised; with ``True`` the face formula is returned.
+    - ``backend`` -- (default: ``"sage"``) where the symbolic integration runs: ``"sage"``
+      (Sage's polynomial rings, no other software needed) or ``"m2"`` (Macaulay2, whose
+      code in ``function_*.m2`` can be read and run on its own; needs ``M2`` on the ``PATH``).
+      Both return the same function; the Sage backend is 10 to 40 times faster in dimension 4.
 
     OUTPUT: an element of :func:`chamber_ring`
 
@@ -255,19 +311,45 @@ def chamber_second_moment(Q, allow_nongeneric=False):
         sage: Qp = [[3, -1], [-1, 5]]                       # another metric in the same chamber
         sage: f(*metric_coordinates(Qp)) == second_moment(Qp)
         True
+        sage: f == chamber_second_moment([[2, -1], [-1, 2]], backend="m2")   # optional - macaulay2
+        True
         sage: chamber_second_moment([[1, 0], [0, 1]])
         Traceback (most recent call last):
         ...
         ValueError: Q is not generic (it lies on a wall between chambers); pass allow_nongeneric=True for the formula on that face
     """
+    if backend not in _BACKENDS:
+        raise ValueError(f"unknown backend {backend!r}; use 'sage' or 'm2'")
     Q = _rows(Q)
     if not allow_nongeneric and not is_generic(Q):
         raise ValueError("Q is not generic (it lies on a wall between chambers); pass allow_nongeneric=True for the formula on that face")
-    R = chamber_ring(len(Q))
-    result = normalizedChamberSecondMomentPolynomial(Q)
-    # Sage's parser, not sage_eval: Python's compiler overflows its stack on long sums
-    return R(Parser(make_var={str(g): g for g in R.gens()}).parse(result))
+    K = chamber_ring(len(Q))
+    if _BACKENDS[backend] == "m2":
+        result = normalizedChamberSecondMomentPolynomial(Q)
+        # Sage's parser, not sage_eval: Python's compiler overflows its stack on long sums
+        return K(Parser(make_var={str(g): g for g in K.gens()}).parse(result))
+    Qr, U = _triangulable_metric(Q)
+    f = _sage_chamber_function(Qr)
+    if U is not None:
+        # f is a function of the entries of Qr = U^T Q U; write it in the entries of Q
+        d = len(Q)
+        gens = iter(K.ring().gens())
+        upper = {(i, j): next(gens) for i in range(d) for j in range(i, d)}
+        Qs = matrix(K.ring(), d, d, lambda i, j: upper[min(i, j), max(i, j)])
+        back = U.transpose() * Qs * U
+        point = [back[i, j] for i in range(d) for j in range(i, d)]
+        f = f.numerator()(*point) / f.denominator()(*point)
+    return _normalize_denominator(K(f))
 
+
+def _normalize_denominator(f):
+    """Write ``f`` as Macaulay2 prints it: integer coefficients without a common factor, and a
+    denominator with positive leading coefficient."""
+    num, den = f.numerator(), f.denominator()
+    coefficients = num.coefficients() + den.coefficients()
+    c = lcm([QQ(a).denominator() for a in coefficients]) / gcd([QQ(a).numerator() for a in coefficients])
+    c = c if den.lc() > 0 else -c
+    return f.parent()(num * c) / f.parent()(den * c)
 
 
 def qnorm_m2(v, Q):

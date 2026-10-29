@@ -1,19 +1,19 @@
 # VoronoiCellToolBox
 
-Exact Voronoi cells, secondary cones and second moments of lattices, in [SageMath](https://sagemath.org) and [Macaulay2](https://macaulay2.com).
+Exact Voronoi cells, secondary cones and second moments of lattices, in [SageMath](https://sagemath.org), with an optional [Macaulay2](https://macaulay2.com) backend.
 
 A positive definite symmetric matrix `Q` (a Gram matrix) defines the metric `x^T Q y` on `R^d`, and with it a lattice `Z^d`. Given `Q`, the package computes, exactly over the rationals:
 
 - the **Voronoi cell** `V_Q`, its relevant vectors, and whether `Q` is generic (the cell is primitive). Every cell is certified to have volume 1, so no relevant vector is missed;
 - the **secondary cone** of `Q`: all metrics whose Voronoi cell has the same combinatorics, as inequalities and rays;
 - a **pulling triangulation** and the **second moment** `SM(Q) = ∫_{V_Q} x^T Q x dx`, with the dimensionless `G(Q) = SM(Q) / (d det(Q)^{1/d})` of the lattice quantizer problem;
-- the **chamber second moment**: `SM` as a rational function of the entries of the metric, valid on the whole secondary cone. The symbolic integration runs in Macaulay2.
+- the **chamber second moment**: `SM` as a rational function of the entries of the metric, valid on the whole secondary cone. The symbolic integration runs in Sage by default, or in Macaulay2 with `backend="m2"` (see below).
 
 Metrics in any chamber are accepted: they are LLL-reduced internally and the results are mapped back.
 
 ## Installation
 
-Requirements: SageMath (tested with 10.6 and 10.10) and Macaulay2 (tested with 1.22), with the `M2` executable on the `PATH`. Then
+Requirements: SageMath (tested with 10.6 and 10.10). Macaulay2 (tested with 1.22) is optional: it is only needed for `backend="m2"`, with the `M2` executable on the `PATH`. Then
 
     sage -pip install git+https://github.com/raulpenaguiao/VoronoiCellToolBox
 
@@ -31,6 +31,20 @@ sage: [matrixify(list(r), 2) for r in rayify(secondary_cone(Q))]
 sage: f = chamber_second_moment(Q); f            # variables: q_0 = q11, q_1 = q12, q_2 = q22
 (2*q_0*q_1^2 + 2*q_1^3 - q_0^2*q_2 + 2*q_1^2*q_2 - q_0*q_2^2)/(12*q_1^2 - 12*q_0*q_2)
 sage: f(*metric_coordinates([[3, -1], [-1, 5]])) == second_moment([[3, -1], [-1, 5]])
+True
+```
+
+### Sage or Macaulay2
+
+`chamber_second_moment(Q)` and `graph_second_moment_function(G)` take a `backend` argument:
+
+- `backend="sage"` (default): the integration runs in Sage's polynomial rings (Singular). No other software is needed, and it is the fastest: about 3 s per chamber in dimension 4.
+- `backend="m2"`: the same algorithm in Macaulay2, in the files `VoronoiCellToolBox/function_*.m2`, which can be read and run on their own in an M2 session. About 15–50 s per chamber in dimension 4.
+
+Both return the same rational function, written the same way:
+
+```sage
+sage: chamber_second_moment(Q, backend="m2") == chamber_second_moment(Q)
 True
 ```
 

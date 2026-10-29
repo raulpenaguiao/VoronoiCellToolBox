@@ -4,6 +4,7 @@
 
 import contextlib
 import io
+import shutil
 import unittest
 from sage.all import QQ, Matrix, PolynomialRing, sage_eval
 from VoronoiCellToolBox.voronoi_cell import second_moment, VCell
@@ -40,6 +41,7 @@ def evaluate_polynomial(polynomial, Q):
     return f(*[QQ(Q[i][j]) for i in range(d) for j in range(i, d)])
 
 
+@unittest.skipIf(shutil.which("M2") is None, "Macaulay2 is not installed")
 class TestAnyChamber(unittest.TestCase):
     """Skewed metrics Q = U^T Q0 U have relevant vectors outside range=2; the polynomial must still be right."""
 
@@ -55,6 +57,7 @@ class TestAnyChamber(unittest.TestCase):
                 self.assertEqual(evaluate_polynomial(normalizedChamberSecondMomentPolynomial(Q), Q), expected)
 
 
+@unittest.skipIf(shutil.which("M2") is None, "Macaulay2 is not installed")
 class TestVerboseModes(unittest.TestCase):
     """The old verbose flags are still accepted, with a deprecation warning, and change nothing;
     debug_m2 prints the raw Macaulay2 output."""

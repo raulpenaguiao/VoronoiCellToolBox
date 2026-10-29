@@ -18,11 +18,13 @@
 ### VectorizedVertex
 
 import random
+import shutil
 import unittest
 from sage.all import Matrix, QQ
 from VoronoiCellToolBox.orchestration import barycentre, VectorizedVertex_m2
 
 
+@unittest.skipIf(shutil.which("M2") is None, "Macaulay2 is not installed")
 class TestM2API(unittest.TestCase):
 
     def test_barycentre(self):
@@ -56,6 +58,7 @@ class TestM2API(unittest.TestCase):
                 self.assertAlmostEqual(result[j][0], expected[j][0], delta=1e-6)
 
 
+@unittest.skipIf(shutil.which("M2") is None, "Macaulay2 is not installed")
 class TestVectorizedVertex(unittest.TestCase):
 
     def test_single_matrix(self):

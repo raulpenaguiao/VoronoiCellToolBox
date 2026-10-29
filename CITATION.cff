@@ -7,7 +7,7 @@ authors:
     given-names: Yelena
   - family-names: Penaguiao
     given-names: Raul
-version: 2.1.0
+version: 2.2.0
 license: GPL-3.0-or-later
 repository-code: "https://github.com/raulpenaguiao/VoronoiCellToolBox"
 keywords:
