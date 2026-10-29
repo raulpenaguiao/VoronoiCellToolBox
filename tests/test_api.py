@@ -4,10 +4,11 @@
 # and the known values G(A4*) and G(D4) (Conway-Sloane, Soto).
 import random
 import unittest
-from sage.all import QQ, ZZ, matrix, identity_matrix
+from sage.all import QQ, ZZ, matrix, identity_matrix, graphs
 from VoronoiCellToolBox import (
     voronoi_cell, relevant_vectors, is_generic, secondary_cone, rayify, matrixify,
     second_moment, normalized_second_moment, chamber_second_moment, metric_coordinates,
+    riemann_matrix,
 )
 from tests.independent_checker import sm_independent
 
@@ -72,6 +73,15 @@ class TestCell(unittest.TestCase):
         self.assertTrue(is_generic(A3STAR))
         self.assertFalse(is_generic([[1, 0, 0], [0, 1, 0], [0, 0, 1]]))
         self.assertFalse(is_generic([[5, 3], [3, 2]]))     # a parallelogram cell, equivalent to I
+
+    def test_maximal_facets_but_not_simple(self):
+        # K_{3,3}: 30 = 2(2^4 - 1) facets, but some vertices lie on more than 4 facets
+        V = voronoi_cell(riemann_matrix(graphs.CompleteBipartiteGraph(3, 3)))
+        self.assertEqual(V.n_facets(), 30)
+        self.assertFalse(V.is_simple())
+        self.assertFalse(is_generic(riemann_matrix(graphs.CompleteBipartiteGraph(3, 3))))
+        for Q, _ in D4_CHAMBERS.values():
+            self.assertTrue(is_generic(Q))
 
     def test_skewed_metric_needs_no_range(self):
         U = matrix(ZZ, [[7, 2], [3, 1]])

@@ -206,7 +206,8 @@ def relevant_vectors(Q):
     Return the relevant vectors of `Q`: the `v \in \ZZ^d` whose bisector
     `\{x : x^T Q v = v^T Q v / 2\}` contains a facet of the Voronoi cell.
 
-    There are `2(2^d - 1)` of them exactly when `Q` is generic (:func:`is_generic`).
+    There are at most `2(2^d - 1)` of them, and exactly that many when `Q` is generic
+    (:func:`is_generic`); the converse fails from `d = 4` on.
 
     EXAMPLES::
 
@@ -224,23 +225,27 @@ def relevant_vectors(Q):
 def is_generic(Q):
     r"""
     Return whether `Q` lies in the interior of a secondary cone, that is, whether its Voronoi
-    cell is primitive (has the maximal number `2(2^d - 1)` of facets).
+    cell is primitive: it has the maximal number `2(2^d - 1)` of facets and it is simple
+    (every vertex lies on exactly `d` facets).
 
     Only for generic `Q` is the chamber second moment one rational function on a full
-    neighbourhood of `Q`. (Testing that every vertex lies on exactly `d` facets is not enough
-    in general: the square lattice passes that test.)
+    neighbourhood of `Q`. Neither condition is enough on its own: the square cell is simple
+    but has 4 facets, and the cell of `K_{3,3}` has the maximal 30 facets but is not simple.
 
     EXAMPLES::
 
-        sage: from VoronoiCellToolBox import is_generic
+        sage: from VoronoiCellToolBox import is_generic, riemann_matrix
         sage: is_generic([[2, -1], [-1, 2]]), is_generic([[1, 0], [0, 1]])
         (True, False)
         sage: is_generic([[3, -1, -1], [-1, 3, -1], [-1, -1, 3]])
         True
+        sage: is_generic(riemann_matrix(graphs.CompleteBipartiteGraph(3, 3)))
+        False
     """
     Q = _rows(Q)
     d = len(Q)
-    return voronoi_cell(Q).n_facets() == 2 * (2**d - 1)
+    V = voronoi_cell(Q)
+    return V.n_facets() == 2 * (2**d - 1) and V.is_simple()
 
 
 def FromMatrixPositionToListPosition(i: int, j: int, d: int) -> int:
